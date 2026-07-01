@@ -20,9 +20,4 @@ links:
     label: Appendix
 image:
   alt_text: "Distribution of respondent interpretations across survey questions"
-# --- Blind link (unlisted, not indexed). Remove these keys to publish. ---
-blind: true        # adds <meta name="robots" content="noindex, nofollow, noarchive">
-build:
-  render: always   # page still builds at /debrief/
-  list: never      # but is excluded from every page list (tabs, related, homepage, sitemap)
 ---
