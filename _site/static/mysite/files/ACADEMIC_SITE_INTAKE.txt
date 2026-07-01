@@ -93,24 +93,23 @@ use it as the visual model for your site:
   VISIBILITY & CREDIT (optional — leave as-is to keep the defaults)
 ------------------------------------------------------------
 
-By default, two small extras are added to your site. Both are optional, and
-you can change them now or later (just ask your assistant). To turn one off,
-change its [x] to [ ].
+Your site comes with two small, optional touches. Both are on by default and
+easy to change now or later (just ask your assistant). To turn one off, change
+its [x] to [ ].
 
-  [x] Footer credit — a small "Created using GaryKing.org/mysite" line in the
-      bottom-right of every page.
+  [x] Footer credit — a small, tasteful "Created using GaryKing.org/mysite"
+      line in the bottom-right corner of every page.
 
-  [x] Directory listing — an invisible marker in your page's source code. It
-      shows nothing to visitors and collects nothing about you; it simply lets
-      us find your site and add it to our public directory at
-      GaryKing.org/mysite, which can help your site get discovered by search
-      engines.
+  [x] Directory listing — a hidden ("invisible") marker in your page's source
+      code. Visitors never see it and it collects nothing about you; it simply
+      lets us find your site and feature it in our directory at
+      GaryKing.org/mysite, which also helps search engines discover your work.
 
-  To change this later, copy and paste the following for your agent, then
+  To change either later, copy and paste the following to your agent, then
   ask it to "preview," and "publish" once you're satisfied:
     - "Turn the GaryKing.org/mysite footer credit off (set
        params.mysite.credit to false)."   Say "on" / true to put it back.
-    - "Turn the GaryKing.org/mysite directory marker off (set
+    - "Turn the GaryKing.org/mysite invisible marker off (set
        params.mysite.discovery to false)."   Say "on" / true to put it back.
 
 
@@ -122,7 +121,8 @@ Build instructions are here:
 https://gking.harvard.edu/mysite/files/ACADEMIC_SITE_PROMPT.md
 
 Fetch that page and follow it exactly, using my answers above as the
-content. Honor the Visibility & credit choices above: if "Footer credit" is
-unchecked set params.mysite.credit: false; if "Directory listing" is
-unchecked set params.mysite.discovery: false. Build a local preview and show
-it to me before anything goes public.
+content. Honor the Visibility & credit choices above: set
+params.mysite.credit to true if "Footer credit" is checked or false if it is
+unchecked, and set params.mysite.discovery to true if "Directory listing" is
+checked or false if it is unchecked. Build a local preview and show it to me
+before anything goes public.
