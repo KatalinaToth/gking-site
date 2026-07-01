@@ -8,13 +8,16 @@
 #     affiliation: "Their University or Organization"
 #     url: "https://their-site-address"
 #
-# The list renders on the /mysite/ page, newest first is fine — order
-# here is the order shown.
+# The list renders on the /mysite/ page. Keep entries in alphabetical order
+# by last name.
 
 sites:
   - name: "Gary King"
     affiliation: "Harvard University, Institute for Quantitative Social Science"
     url: "https://gking.harvard.edu/"
+  - name: "Brandon Stewart"
+    affiliation: "Princeton University, Department of Sociology"
+    url: "https://brandonstewart.org/"
   - name: "Katalina Toth"
     affiliation: "Harvard University, Institute for Quantitative Social Science"
     url: "https://katalinatoth.github.io/katalinatoth/"
