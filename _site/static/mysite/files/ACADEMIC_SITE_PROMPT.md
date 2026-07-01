@@ -615,7 +615,7 @@ The single `assets/css/custom.css` file must implement:
 
     **Also add invisible discovery metadata** in the `<head>` so a site can be found and added to the public GaryKing.org/mysite directory automatically. There is **no public submission form** — it was removed to avoid spam and gamed URLs; the directory is built entirely from this metadata. It renders nothing visible and collects nothing. Emit two things, both gated behind `params.mysite.discovery` (on by default):
 
-    - On **every page**, a findable marker that survives even if the footer credit is removed:
+    - On **every page**, an invisible marker that survives even if the footer credit is removed:
       `<meta name="generator" content="Created using GaryKing.org/mysite (https://gking.harvard.edu/mysite)">`
     - On the **homepage only**, a `schema.org` `Person` block carrying the owner's identity so the directory can list them — name, affiliation (institution), and site URL:
 

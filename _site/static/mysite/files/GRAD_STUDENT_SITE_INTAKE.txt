@@ -139,7 +139,7 @@ its [x] to [ ].
   [x] Footer credit — a small, tasteful "Created using GaryKing.org/mysite"
       line in the bottom-right corner of every page.
 
-  [x] Directory listing — a hidden ("invisible") marker in your page's source
+  [x] Directory listing — an invisible marker in your page's source
       code. Visitors never see it and it collects nothing about you; it simply
       lets us find your site and feature it in our directory at
       GaryKing.org/mysite, which also helps search engines discover your work.
