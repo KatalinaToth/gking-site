@@ -12,6 +12,6 @@ abstract: |-
   Replication data at the Harvard Dataverse: [https://doi.org/10.7910/DVN/GGUR0P](https://doi.org/10.7910/DVN/GGUR0P).
 links:
   - type: pdf
-    url: "files/abs/pr-abs.shtml"
+    url: "/files/pr.pdf"
 publication: "American Journal of Political Science, 54, 3, Pp. 561-81"
 ---

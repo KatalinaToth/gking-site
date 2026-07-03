@@ -11,7 +11,7 @@ authors:
 publication_types:
   - "journal_article"
 abstract: |-
-  We extend [Evans and King (Forthcoming, 2021)](/publication/statistically-valid-inferences-from-differentially-private-data-releases-with-app/) to nonlinear transformations, using proportions and weighted averages as our running examples.
+  We extend [Evans and King (Forthcoming, 2021)](/publication/statistically-valid-inferences-from-differentially-private-data-releases-with-application-to-the-facebook-urls-dataset/) to nonlinear transformations, using proportions and weighted averages as our running examples.
 links:
   - type: pdf
     url: "files/wt.pdf"

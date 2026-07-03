@@ -400,12 +400,12 @@ redirects:
     note: "drupal target: /sibs"
 
   - from: "publication/whos-blame-survey-instability-respondents-random-preferences-or-researchers-flawed"
-    to:   "/publication/"
-    note: "publication slug not found on new site — sent to /publication/ index (drupal target: /publication/whos-blame-survey-instability-respondents-nonexistent-preferences-…)"
+    to:   "/debrief/"
+    note: "drupal survey-instability vanity URL → /debrief/ (debrief paper)"
 
   - from: "publication/whos-blame-survey-instability-respondents-random-preferences-or-researchers-flawed-0"
-    to:   "/publication/"
-    note: "publication slug not found on new site — sent to /publication/ index (drupal target: /publication/whos-blame-survey-instability-respondents-nonexistent-preferences-…)"
+    to:   "/debrief/"
+    note: "drupal survey-instability vanity URL → /debrief/ (debrief paper)"
 
   - from: "publications/cem-coarsened-exact-matching-software"
     to:   "/software/cem-coarsened-exact-matching-software/"
@@ -417,7 +417,7 @@ redirects:
 
   - from: "publications/propensity-score"
     to:   "/publication/why-propensity-scores-should-not-be-used-for-matching/"
-    note: "drupal target: /publications/why-propensity-scores-should-not-be-used-formatching"
+    note: "drupal target: /publication/why-propensity-scores-should-not-be-used-for-matching/"
 
   - from: "publications/term/1573"
     to:   "/#research-areas"
@@ -872,7 +872,7 @@ redirects:
     to:   "/publication/expert-report-of-gary-king-in-bowyer-et-al.-v.-ducey-governor-et-al.-us-district-court-district-of-arizona/"
 
   - from: "publications/explaining-systematic-bias-and-nontransparency-us-social-securityadministration"
-    to:   "/publication/explaining-systematic-bias-and-nontransparency-in-us-social-security-administrat-2015/"
+    to:   "/publication/explaining-systematic-bias-and-nontransparency-in-us-social-security-administration-forecasts/"
 
   - from: "publications/finding-new-information-ecological-inference-models-comment-jon-wakefield-ecological-in"
     to:   "/publication/finding-new-information-for-ecological-inference-models-a-comment-on-jon-wakefield-ecological-inference-in-2x2-tables/"

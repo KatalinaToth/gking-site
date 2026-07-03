@@ -16,6 +16,6 @@ abstract: |-
   Replication data at the Harvard Dataverse: [https://doi.org/10.7910/DVN/BDWIC3](https://doi.org/10.7910/DVN/BDWIC3).
 links:
   - type: pdf
-    url: "files/abs/making-abs.shtml"
+    url: "/files/making.pdf"
 publication: "American Journal of Political Science, 44, Pp. 341–355"
 ---
