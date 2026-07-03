@@ -1,0 +1,59 @@
+# Which short-URL redirect stubs get full HTML inlined at build time.
+#
+# GitHub Pages cannot rewrite URLs on the server, so apply_rewrites.py can copy
+# a target page's rendered HTML into the stub path. That preserves the short
+# address bar (e.g. /50c/) but duplicates HTML in the deploy artifact.
+#
+# Policy: inline only high-value shorts; leave long-tail Drupal paths as tiny
+# meta-refresh stubs (~1 KB each). See _automation/scripts/report_rewrite_costs.py
+# for a size breakdown.
+#
+# Fields are optional; omitted lists default to the values below.
+
+policy:
+  # Never inline stubs whose source path starts with one of these prefixes.
+  deny_source_prefixes:
+    - /authors/
+    - /presentations/
+    - /publications/
+    - /gking/
+    - /sites/
+    - /category/
+    - /research-interests/
+    - /publication_types/
+    - /tags/
+
+  # Never inline stubs whose source path contains one of these substrings.
+  deny_source_substrings:
+    - blanktitle
+    - home-page
+    - /home/
+    - clone-gary
+    - /faq
+    - original-home
+    - new-home
+    - eicamera
+    - gary-king-home
+
+  # List/section targets — inlining would duplicate large index pages many times.
+  deny_targets:
+    - /
+    - /publication/
+    - /research-group/
+    - /people/
+    - /software/
+    - /teaching/
+    - /talk/
+
+  # Single-segment legacy redirect paths (from redirects.yaml), e.g. /eiR/ → /ei/.
+  allow_single_segment: true
+
+  # /publication/<long-slug>/ → /short/ alias stubs from redirects.yaml.
+  allow_publication_aliases: true
+
+  # EditMe pages with `url: /short/` in front matter (e.g. /50c/, /quest/).
+  allow_canonical_short_urls: true
+
+# Optional explicit overrides (applied after policy). Use to force or block paths.
+force_inline: []
+skip_inline: []

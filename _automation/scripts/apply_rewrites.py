@@ -8,6 +8,10 @@ exists in public/, the redirect stub is overwritten with a copy of the
 target page's fully rendered HTML.  The result: GitHub Pages serves the
 real content at the short URL — no client-side redirect.
 
+Only stubs allowed by EditMe/Redirects/Data/inline_rewrites.yaml are
+inlined; other stubs stay as lightweight meta-refresh pages.  Run
+_automation/scripts/report_rewrite_costs.py to audit duplication cost.
+
 External targets (https://…) are left untouched.
 """
 from __future__ import annotations
@@ -15,13 +19,19 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rewrite_inline_policy import (
+    base_url,
+    canonical_short_urls,
+    load_policy,
+    should_inline,
+    to_relative,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / "public"
 
-# Matches <meta http-equiv="refresh" content="0; url=TARGET">
-# Handles both absolute and relative URLs, with or without quotes.
 _REFRESH_RE = re.compile(
     r'<meta\s+http-equiv=["\']?refresh["\']?\s+'
     r'content=["\']?\d+;\s*url=([^"\'>\s]+)',
@@ -29,33 +39,10 @@ _REFRESH_RE = re.compile(
 )
 
 
-def _base_url() -> str:
-    """Read baseURL from hugo.yaml so we can strip it from absolute targets."""
-    for name in ("hugo.yaml", "hugo.toml", "config.yaml", "config.toml"):
-        p = ROOT / name
-        if p.exists():
-            text = p.read_text()
-            m = re.search(r'baseURL:\s*["\']?(https?://[^"\'>\s]+)', text)
-            if m:
-                return m.group(1).rstrip("/")
-    return ""
-
-
-def _to_relative(url: str, base: str) -> str | None:
-    """Convert an internal URL to a root-relative path, or None if external."""
-    url = url.strip()
-    if url.startswith("/"):
-        return url
-    if base and url.startswith(base):
-        return url[len(base):] or "/"
-    parsed = urlparse(url)
-    if parsed.scheme in ("http", "https"):
-        return None  # external
-    return "/" + url  # bare relative path
-
-
 def _resolve_src(rel_path: str) -> Path | None:
     """Find the rendered index.html for a root-relative URL path."""
+    if "#" in rel_path:
+        return None
     cleaned = rel_path.strip("/")
     if not cleaned:
         candidate = PUBLIC / "index.html"
@@ -69,8 +56,10 @@ def main() -> int:
         print("[apply_rewrites] public/ not found — run `hugo` first.")
         return 1
 
-    base = _base_url()
-    applied = skipped_ext = skipped_miss = 0
+    policy, force_inline, skip_inline = load_policy()
+    canonical = canonical_short_urls()
+    base = base_url()
+    applied = skipped_ext = skipped_miss = skipped_policy = 0
 
     for html_file in sorted(PUBLIC.rglob("index.html")):
         try:
@@ -83,7 +72,7 @@ def main() -> int:
             continue
 
         raw_target = m.group(1)
-        rel_target = _to_relative(raw_target, base)
+        rel_target = to_relative(raw_target, base)
         if rel_target is None:
             skipped_ext += 1
             continue
@@ -101,11 +90,20 @@ def main() -> int:
         if src.resolve() == html_file.resolve():
             continue
 
+        rel_from = "/" + str(html_file.parent.relative_to(PUBLIC)).strip("/")
+        if rel_from != "/":
+            rel_from += "/"
+
+        if not should_inline(rel_from, rel_target, policy, canonical, force_inline, skip_inline):
+            skipped_policy += 1
+            continue
+
         html_file.write_bytes(src.read_bytes())
         applied += 1
 
     print(
         f"[apply_rewrites] {applied} page(s) rewritten, "
+        f"{skipped_policy} left as redirect stubs (policy), "
         f"{skipped_ext} external skipped, "
         f"{skipped_miss} target(s) not found."
     )

@@ -8,10 +8,11 @@
 # will show the content from the <to> target.
 #
 #   - INTERNAL targets (paths like /publication/quest-paper/) are rendered
-#     inline at build time: the deploy pipeline copies the fully rendered
-#     target page to the short URL path, so the browser address bar
-#     keeps showing the short URL (e.g. /quest/ instead of jumping to
-#     the long canonical path).
+#     inline at build time for high-value short URLs only (see
+#     EditMe/Redirects/Data/inline_rewrites.yaml). Other internal stubs stay
+#     as lightweight meta-refresh redirects. Run
+#     _automation/scripts/report_rewrite_costs.py after `hugo --minify` to
+#     audit duplication cost.
 #
 #   - EXTERNAL targets (https://...) still redirect as before.
 #
