@@ -136,6 +136,49 @@
     border-color: transparent; color: #fff;
   }
 
+  .gk-session-rating {
+    position: relative;
+    margin: 10px auto 4px;
+    padding: 12px 34px 12px 16px;
+    background: #fff; border: 1px solid #dde8f5; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(88,118,169,0.08);
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 440px;
+  }
+  .gk-sr-question { font-size: 13px; color: #3a4a6b; font-weight: 600; }
+  .gk-sr-optional { font-weight: 400; color: #8a9ab8; }
+  .gk-sr-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .gk-sr-options button {
+    font-size: 13px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid #dde8f5; background: #f7f9fc; color: #3a4a6b;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .gk-sr-options button:hover { background: #fff; border-color: #abc5ec; }
+  .gk-sr-dismiss {
+    position: absolute; top: 6px; right: 8px;
+    background: transparent; border: none; cursor: pointer;
+    color: #b0bfd4; font-size: 13px; padding: 2px; line-height: 1;
+  }
+  .gk-sr-dismiss:hover { color: #5876a9; }
+  .gk-sr-thanks { font-size: 12px; color: #8a9ab8; }
+  .gk-session-rating textarea {
+    border: 1px solid #dde8f5; border-radius: 8px; outline: none; resize: vertical;
+    min-height: 44px; max-height: 120px; padding: 6px 8px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px; color: #3a4a6b;
+  }
+  .gk-sr-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .gk-sr-actions button {
+    font-size: 12px; padding: 5px 10px; border-radius: 6px;
+    border: 1px solid #dde8f5; background: #fff; color: #5876a9;
+    cursor: pointer; font-family: inherit;
+  }
+  .gk-sr-actions button.primary {
+    background: linear-gradient(135deg, #5876a9, #abc5ec);
+    border-color: transparent; color: #fff;
+  }
+
   .gk-figures {
     margin-top: 10px; padding-top: 8px;
     border-top: 1px dashed #dde8f5;
@@ -428,6 +471,13 @@
   var streamMsgIdx = -1;
   var feedbackState = {};
 
+  /* Session-rating card (Claude-Code-style micro-survey): pops inline after
+     the 2nd completed assistant reply, once per conversation, with a
+     localStorage cooldown across visits so returning users aren't re-asked. */
+  var SR_LS_KEY = "gk_session_rating_last";
+  var SR_COOLDOWN_MS = 14 * 24 * 3600 * 1000;
+  var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
+
   function uuid() {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
@@ -627,6 +677,62 @@
     };
   }
 
+  function maybeShowSessionRating() {
+    if (sessionRating.shown) return;
+    var n = 0;
+    for (var i = 0; i < messages.length; i++) {
+      if (messages[i].role === "assistant" && stripAttach(messages[i].content)) n++;
+    }
+    if (n < 2) return;
+    for (var id in feedbackState) {
+      if (feedbackState[id] && feedbackState[id].rated) return;
+    }
+    try {
+      var last = parseInt(localStorage.getItem(SR_LS_KEY) || "0", 10);
+      if (last && Date.now() - last < SR_COOLDOWN_MS) return;
+    } catch (e) {}
+    sessionRating.shown = true;
+    try { localStorage.setItem(SR_LS_KEY, String(Date.now())); } catch (e) {}
+    postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_shown", rating: null }));
+  }
+
+  function hideSessionRatingSoon() {
+    setTimeout(function() {
+      if (!sessionRating.commentOpen) {
+        sessionRating.dismissed = true;
+        renderMessages();
+      }
+    }, 4000);
+  }
+
+  function renderSessionRatingCard() {
+    var card = document.createElement("div");
+    card.className = "gk-session-rating";
+    if (sessionRating.rated) {
+      if (sessionRating.commentOpen) {
+        card.innerHTML =
+          '<div class="gk-sr-question">Thanks &mdash; anything we could do better? <span class="gk-sr-optional">(optional)</span></div>' +
+          '<textarea data-sr-textarea placeholder="Your suggestion..."></textarea>' +
+          '<div class="gk-sr-actions">' +
+          '<button type="button" data-action="sr-comment-cancel" data-msg-id="session">No thanks</button>' +
+          '<button type="button" class="primary" data-action="sr-comment-send" data-msg-id="session">Send</button></div>';
+        card.querySelector("textarea").value = sessionRating.commentDraft || "";
+      } else {
+        card.innerHTML = '<div class="gk-sr-thanks">Thanks for your feedback!</div>';
+      }
+    } else {
+      card.innerHTML =
+        '<button type="button" class="gk-sr-dismiss" data-action="sr-dismiss" data-msg-id="session" aria-label="Dismiss">&#10005;</button>' +
+        '<div class="gk-sr-question">How is GaryAI doing so far?</div>' +
+        '<div class="gk-sr-options">' +
+        '<button type="button" data-action="sr-rate" data-sr-value="good" data-msg-id="session">&#128522; Great</button>' +
+        '<button type="button" data-action="sr-rate" data-sr-value="fine" data-msg-id="session">&#128528; OK</button>' +
+        '<button type="button" data-action="sr-rate" data-sr-value="bad" data-msg-id="session">&#128542; Not helpful</button>' +
+        '</div>';
+    }
+    return card;
+  }
+
   function thumbSvg(dir, filled) {
     if (dir === "up") return '<svg width="15" height="15" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v9a1 1 0 0 0 1 1h9.5a2 2 0 0 0 2-1.7l1.4-7A2 2 0 0 0 19 10h-5l1-4a2 2 0 0 0-2-2.5L8 11z"/><path d="M3 11h4v10H3z"/></svg>';
     return '<svg width="15" height="15" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 13V4a1 1 0 0 0-1-1H6.5a2 2 0 0 0-2 1.7l-1.4 7A2 2 0 0 0 5 14h5l-1 4a2 2 0 0 0 2 2.5L16 13z"/><path d="M21 13h-4V3h4z"/></svg>';
@@ -637,6 +743,8 @@
       var id = ta.getAttribute("data-comment-textarea");
       if (feedbackState[id]) feedbackState[id].commentDraft = ta.value;
     });
+    var srTa = messagesEl.querySelector("[data-sr-textarea]");
+    if (srTa) sessionRating.commentDraft = srTa.value;
 
     messagesEl.innerHTML = "";
     chatEl.classList.toggle("gk-empty", messages.length === 0);
@@ -696,6 +804,10 @@
       t.className = "gk-msg bot";
       t.innerHTML = '<div class="gk-avatar">' + esc(AVATAR_LABEL) + '</div><div class="gk-typing"><span></span><span></span><span></span></div>';
       messagesEl.appendChild(t);
+    }
+
+    if (sessionRating.shown && !sessionRating.dismissed) {
+      messagesEl.appendChild(renderSessionRatingCard());
     }
 
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -817,6 +929,7 @@
         if (!messages[idx].content) messages[idx].content = "Sorry, I couldn't generate a response.";
         streaming = false;
         updateSendState();
+        maybeShowSessionRating();
         renderMessages();
       } else {
         var data;
@@ -825,6 +938,7 @@
         var figs = data && Array.isArray(data.figures) ? data.figures : [];
         var previews = data && Array.isArray(data.previews) ? data.previews : [];
         messages.push({ id: uuid(), role: "assistant", content: reply, figures: figs, previews: previews, sitePreview: pendingPreview });
+        maybeShowSessionRating();
         setLoading(false);
       }
     } catch(e) {
@@ -864,6 +978,38 @@
     var msgIdx = target.getAttribute("data-msg-idx");
     msgIdx = msgIdx == null ? null : parseInt(msgIdx, 10);
     if (!msgId) return;
+
+    if (action === "sr-rate") {
+      if (sessionRating.rated) return;
+      var srValue = target.getAttribute("data-sr-value");
+      sessionRating.rated = srValue;
+      sessionRating.commentOpen = srValue !== "good";
+      postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating", rating: srValue }));
+      if (!sessionRating.commentOpen) hideSessionRatingSoon();
+      renderMessages();
+      return;
+    } else if (action === "sr-dismiss") {
+      sessionRating.dismissed = true;
+      postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_dismissed", rating: null }));
+      renderMessages();
+      return;
+    } else if (action === "sr-comment-cancel") {
+      sessionRating.commentOpen = false;
+      sessionRating.commentDraft = "";
+      hideSessionRatingSoon();
+      renderMessages();
+      return;
+    } else if (action === "sr-comment-send") {
+      var srTa = messagesEl.querySelector("[data-sr-textarea]");
+      var srComment = srTa ? srTa.value.trim() : "";
+      sessionRating.commentOpen = false;
+      sessionRating.commentDraft = "";
+      sessionRating.commentSent = true;
+      if (srComment) postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_comment", rating: sessionRating.rated, comment: srComment }));
+      hideSessionRatingSoon();
+      renderMessages();
+      return;
+    }
 
     if (action === "rate-up" || action === "rate-down") {
       if (feedbackState[msgId] && feedbackState[msgId].rated) return;
