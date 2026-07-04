@@ -58,6 +58,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install pyyaml
 
+      - name: Verify Hugo mounts are current
+        run: python3 _automation/scripts/generate_mounts.py --check
+
       - name: Generate redirect stubs
         run: python3 _automation/scripts/build_redirects.py
 
@@ -75,6 +78,9 @@ jobs:
             --minify \
             --buildFuture \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
+
+      - name: Smoke-test build output
+        run: python3 _automation/scripts/smoke_build.py
 
       - name: Build Pagefind search index
         run: npx pagefind --site public
