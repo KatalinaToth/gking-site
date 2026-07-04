@@ -1770,6 +1770,10 @@ redirects:
   - from: "presentations/teaching-innovations-based-social-science-research"
     to:   "/talk/teaching-innovations-based-on-social-science-research/"
 
+  - from: "video/overseers.html"
+    to:   "https://youtu.be/vSQw2LtCnlc"
+    note: "Former on-site video player; now on YouTube"
+
   - from: "presentations/topics-measurement-social-and-health-sciences"
     to:   "/talk/topics-in-measurement-for-the-social-and-health-sciences/"
 
