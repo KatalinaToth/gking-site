@@ -12,6 +12,7 @@ node_modules/
 
 # Local dev env (Hugo binary etc., user-installed)
 .env-local/
+.tools/
 
 # Scraped data (large, not needed for Hugo build)
 ../scraped_data/
@@ -23,6 +24,9 @@ node_modules/
 # _automation/scripts/build_redirects.py rebuilds these at deploy time.
 EditMe/Redirects/content/
 _site/static/_redirects
+# Stale local copies from older workflows; Hugo mounts EditMe/Redirects/content instead.
+/content/
+/static/
 
 # Generated local citation audit
 # (regenerate: python3 _automation/scripts/writings/audit_writings_citations.py)

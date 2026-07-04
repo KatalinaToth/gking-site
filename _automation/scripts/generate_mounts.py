@@ -36,9 +36,9 @@ END_MARKER = "# === END AUTO-GENERATED MOUNTS ==="
 # CONTENT_SHALLOW: sections where one EditMe folder maps to one Hugo target.
 # CONTENT_DEEP:    sections where leaf folders inside EditMe each map to
 #                  the same Hugo target (used for Writings/Articles where
-#                  papers nest inside topic/decade folders, and for
-#                  Writings/Presentations where talks nest inside title
-#                  folders).
+#                  papers nest inside topic/decade folders).
+#                  Presentations use a single shallow mount: ~130 separate
+#                  mounts to content/talk stopped Hugo from merging talk pages.
 # LAYOUTS:         per-section layout overrides under EditMe/UI/PerSectionLayouts/.
 # DATA:            data files inside EditMe/<Section>/Data/ that get merged
 #                  into Hugo's site.Data tree.
@@ -58,6 +58,9 @@ CONTENT_SHALLOW = [
     ("Teaching",           "content/teaching"),
     ("Contact",            "content/contact"),
     ("Redirects/content",  "content/_redirects"),
+    ("Writings/Presentations", "content/talk"),
+    ("Writings/_SectionPages/talk", "content/talk"),
+    ("Writings/_SectionPages/publication", "content/publication"),
 ]
 
 # For deep sections, the script walks the EditMe sub-tree and emits one
@@ -70,7 +73,6 @@ CONTENT_DEEP = [
     ("Writings/Patents",        "content/publication"),
     ("Writings/CourtBriefs",    "content/publication"),
     ("Writings/SoftwareNotes",  "content/publication"),
-    ("Writings/Presentations",  "content/talk"),
 ]
 
 LAYOUTS = [

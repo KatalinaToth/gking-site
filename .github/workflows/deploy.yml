@@ -73,6 +73,7 @@ jobs:
           hugo \
             --gc \
             --minify \
+            --buildFuture \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
 
       - name: Build Pagefind search index
