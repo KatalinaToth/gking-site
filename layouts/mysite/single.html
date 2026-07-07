@@ -141,6 +141,7 @@
       font-size: 13px; font-weight: 800;
     }
     .update-foot { font-size: 14.5px; color: var(--muted); margin: 6px 0 2px; }
+    .prompt-note { font-size: 14.5px; color: var(--muted); margin: 4px 0 0; }
     /* Indent each step's content under its number so the two steps read clearly. */
     .update-step-body { margin-left: 34px; }
     .step .body code {
@@ -245,9 +246,12 @@
       <summary><span class="num dot">★</span> Before you begin — what you'll need <span class="chev" aria-hidden="true">&#9662;</span></summary>
       <div class="body">
         <ul>
-          <li><b>An AI agent.</b> Any good AI agent will work. We use
-            <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>,
-            but Claude Code, OpenAI's Codex, or others work too. You need an agent, not a browser chat window like ChatGPT. These require a paid plan: with Cursor, create a free account and pick a plan that includes Claude (Pro or above); both Claude Code and Codex also require paid plans.</li>
+          <li><b>An AI agent.</b> Any good AI agent will work — you need an agent, not a browser chat window like ChatGPT. Not sure which to pick?
+            <ul>
+              <li><b>Comfortable with the command line or programming?</b> Use <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a> (what we use), <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>, or <a href="https://openai.com/codex/" target="_blank" rel="noopener">OpenAI's Codex</a>.</li>
+              <li><b>Prefer no code or terminal?</b> Try <a href="https://claude.com/product/cowork" target="_blank" rel="noopener">Claude Cowork</a> — Anthropic's desktop app that works right on your computer.</li>
+            </ul>
+            All of these require a paid plan: with Cursor, create a free account and pick a plan that includes Claude (Pro or above); Claude Code, Claude Cowork, and Codex also require paid plans.</li>
           <li><b>A GitHub account</b> — sign up free at <a href="https://github.com" target="_blank" rel="noopener">github.com</a> if you don't have one. GitHub is a free service that stores and publishes your website. It uses <i>version control</i>, meaning every change is saved as a checkpoint you can revisit or undo — so nothing is ever lost, and several people can safely work on the same site without overwriting each other.</li>
           <li><b>A few files</b> (optional) — your CV PDF, a headshot, and any paper PDFs you'd like hosted.</li>
         </ul>
@@ -372,6 +376,11 @@
           <li>
             <b>Add a presentation or talk</b>
             <div class="say">"Add a new talk: Title: [title] · Event: [venue] · Date: [date] · Slides PDF attached. Show me a preview first."</div>
+          </li>
+          <li>
+            <b>Add Google Analytics</b>
+            <p class="prompt-note">Google Analytics is a free tool that shows how many people visit your site and which pages they view. When you set it up at <a href="https://analytics.google.com" target="_blank" rel="noopener">analytics.google.com</a>, it gives you a <i>measurement ID</i> — a short code like <code>G-XXXXXXXXXX</code> that links your site to your account. Paste that ID in below.</p>
+            <div class="say">"Add Google Analytics to my site. My measurement ID is [G-XXXXXXXXXX]. Show me a preview first."</div>
           </li>
           <li>
             <b>Remove the footer credit</b>
