@@ -403,6 +403,21 @@
         <ul>
           <li><b>Site isn't updating after publishing:</b> go to your repository on GitHub, click the <b>Actions</b> tab. If there's a red X, copy the error and tell your assistant: <i>"The build failed. Here's the error: [paste]."</i></li>
           <li><b>You don't like a recent change:</b> tell your assistant <i>"Revert the last change and republish."</i> Everything is versioned, so nothing is lost forever.</li>
+          <li>
+            <b>Your site is over 1&nbsp;GB and won't publish:</b> GitHub Pages — the free host these instructions use — caps a published site at about <b>1&nbsp;GB</b>.
+            <p class="prompt-note"><b>You are very unlikely to ever hit this.</b> A normal academic site — text, a headshot, and even a few hundred PDFs — is only tens of megabytes. You'd need on the order of a thousand large PDFs, or hundreds of high-resolution images, to get close to 1&nbsp;GB. If you do see a build error about the size limit, you can move to <b>Cloudflare Pages</b> — another free host, with far more room — without changing how you work day&#8209;to&#8209;day:</p>
+            <ol class="cf-steps">
+              <li><b>Make a free Cloudflare account</b> at <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com/sign-up</a>.</li>
+              <li><b>Create a Pages project:</b> in the dashboard, go to <b>Workers &amp; Pages → Create → Pages</b> and choose <b>Upload assets</b> (direct upload). Give it a name and finish the short setup — you'll get a free address like <code>yourname.pages.dev</code>.</li>
+              <li><b>Copy two keys from Cloudflare</b> — your <i>Account ID</i> and an <i>API token</i> (with the "Cloudflare Pages → Edit" permission) — and add them to your GitHub repository under <b>Settings → Secrets and variables → Actions</b>, named <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN</code>.</li>
+              <li><b>Let your assistant finish the switch.</b>
+                <div class="say">"Update my deploy workflow to also publish the built site to Cloudflare Pages (project name [your project name]) using the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets. Keep GitHub Pages publishing too for now. Show me a preview first."</div>
+                It handles all the technical configuration.
+              </li>
+              <li><b>Point your web address at Cloudflare.</b> If you use a custom domain (like <code>yourname.university.edu</code>), your university's IT/DNS team makes a one-line change to send it to the new Cloudflare address. If you use the free <code>username.github.io</code> address, you can simply start sharing the new <code>.pages.dev</code> address instead.</li>
+            </ol>
+            <p class="prompt-note">Nothing about editing changes: you still edit and publish exactly as before. Cloudflare just serves the finished site, with far more room to grow.</p>
+          </li>
         </ul>
       </div>
     </details>
