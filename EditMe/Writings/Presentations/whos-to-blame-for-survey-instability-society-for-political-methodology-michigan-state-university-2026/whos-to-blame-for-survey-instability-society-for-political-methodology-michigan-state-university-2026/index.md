@@ -1,5 +1,5 @@
 ---
-title: "Who's to Blame for Survey Instability: Respondents with Nonexistent Preferences or Researchers with Flawed Measures? (talk at Society for Political Methodology at Michigan State University, 7 18 2026)"
+title: "Who's to Blame for Survey Instability: Respondents with Nonexistent Preferences or Researchers with Flawed Measures? (talk at Society for Political Methodology at Michigan State University, 7/18/2026)"
 slug: whos-to-blame-for-survey-instability-society-for-political-methodology-michigan-state-university-2026
 date: '2026-07-18'
 authors:
