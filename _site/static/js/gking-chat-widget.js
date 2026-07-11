@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.2.0";
+  var WIDGET_VERSION = "1.2.1";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -824,10 +824,7 @@
     //   { rated: 'up'|'down'|null, commentOpen: bool, commentDraft: string, commentSent: bool }
     var feedbackState = {};
     // Session-rating card (Claude-Code-style micro-survey): pops inline after
-    // the 2nd completed assistant reply, once per conversation, with a
-    // localStorage cooldown shared with the /ask-gary full page (same origin).
-    var SR_LS_KEY = "gk_session_rating_last";
-    var SR_COOLDOWN_MS = 14 * 24 * 3600 * 1000;
+    // the 2nd completed assistant reply, once per conversation.
     var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
 
     function ensureConversationId() {
@@ -905,12 +902,7 @@
       for (var id in feedbackState) {
         if (feedbackState[id] && feedbackState[id].rated) return;
       }
-      try {
-        var last = parseInt(localStorage.getItem(SR_LS_KEY) || "0", 10);
-        if (last && Date.now() - last < SR_COOLDOWN_MS) return;
-      } catch (e) {}
       sessionRating.shown = true;
-      try { localStorage.setItem(SR_LS_KEY, String(Date.now())); } catch (e) {}
       postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_shown", rating: null }));
     }
 

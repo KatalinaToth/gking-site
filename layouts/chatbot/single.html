@@ -472,10 +472,7 @@
   var feedbackState = {};
 
   /* Session-rating card (Claude-Code-style micro-survey): pops inline after
-     the 2nd completed assistant reply, once per conversation, with a
-     localStorage cooldown across visits so returning users aren't re-asked. */
-  var SR_LS_KEY = "gk_session_rating_last";
-  var SR_COOLDOWN_MS = 14 * 24 * 3600 * 1000;
+     the 2nd completed assistant reply, once per conversation. */
   var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
 
   function uuid() {
@@ -687,12 +684,7 @@
     for (var id in feedbackState) {
       if (feedbackState[id] && feedbackState[id].rated) return;
     }
-    try {
-      var last = parseInt(localStorage.getItem(SR_LS_KEY) || "0", 10);
-      if (last && Date.now() - last < SR_COOLDOWN_MS) return;
-    } catch (e) {}
     sessionRating.shown = true;
-    try { localStorage.setItem(SR_LS_KEY, String(Date.now())); } catch (e) {}
     postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_shown", rating: null }));
   }
 
