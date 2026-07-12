@@ -387,6 +387,12 @@
     border-color: transparent; color: #fff;
   }
 
+  /* Touch Safari (iPad) auto-zooms the page when focusing an input below
+     16px, leaving the chat UI zoomed off-screen. Desktop keeps 14px. */
+  @media (pointer: coarse) {
+    .gk-input-row textarea { font-size: 16px; }
+  }
+
   @media (max-width: 600px) {
     .gk-chat, .gk-modal-overlay { display: none !important; }
     .page-body.my-10 { padding: 0 !important; }

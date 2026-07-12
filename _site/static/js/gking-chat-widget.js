@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.2.1";
+  var WIDGET_VERSION = "1.2.2";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -486,7 +486,10 @@
     "  .messages { padding: 10px; }",
     "  .bubble { max-width: 95%; }",
     "  .input-row { padding: 8px 8px max(8px, env(safe-area-inset-bottom)); gap: 6px; }",
-    "  .input-row textarea { font-size: 13px; padding: 8px 10px; }",
+    // 16px minimum on every text field: iOS Safari auto-zooms the page when
+    // focusing an input below 16px, leaving the widget larger than the screen.
+    "  .input-row textarea { font-size: 16px; padding: 8px 10px; }",
+    "  .feedback-comment textarea, .session-rating textarea, .modal textarea { font-size: 16px; }",
     "  .input-row .send { width: 34px; height: 34px; }",
     "  .footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }",
     "}"
@@ -1073,18 +1076,46 @@
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    // The panel is full-screen at <=600px (same breakpoint as the CSS media query).
+    function isMobileViewport() {
+      return window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+    }
+
+    // Lock host-page scrolling while the full-screen panel is open so the page
+    // can't scroll or rubber-band behind it. Saves the host's inline styles so
+    // unlocking restores whatever was there before.
+    var savedOverflow = null;
+    function lockPageScroll(lock) {
+      var docEl = document.documentElement;
+      if (lock && savedOverflow === null) {
+        savedOverflow = [docEl.style.overflow, document.body.style.overflow];
+        docEl.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+      } else if (!lock && savedOverflow !== null) {
+        docEl.style.overflow = savedOverflow[0];
+        document.body.style.overflow = savedOverflow[1];
+        savedOverflow = null;
+      }
+    }
+
     function setOpen(next) {
       open = next;
       panel.hidden = !open;
       btn.setAttribute("aria-label", open ? "Close chat" : "Open chat");
       iconChat.style.display = open ? "none" : "";
       iconClose.style.display = open ? "" : "none";
+      var mobile = isMobileViewport();
+      lockPageScroll(open && mobile);
       if (open) {
         firePixel("widget");
         renderMessages();
-        setTimeout(function () {
-          textarea.focus();
-        }, 0);
+        // Don't autofocus on mobile: it pops the keyboard over the welcome
+        // message the moment the panel opens.
+        if (!mobile) {
+          setTimeout(function () {
+            textarea.focus();
+          }, 0);
+        }
       }
     }
 
