@@ -90,27 +90,45 @@ use it as the visual model for your site:
 
 
 ------------------------------------------------------------
-  VISIBILITY & CREDIT (optional — leave as-is to keep the defaults)
+  VISIBILITY, CREDIT & STAYING IN TOUCH (optional)
 ------------------------------------------------------------
 
-Your site comes with two small, optional touches. Both are on by default and
-easy to change now or later (just ask your assistant). To turn one off, change
-its [x] to [ ].
+Everything here is optional. The [x]/[ ] marks show the defaults — change any
+[x] to [ ] (or a [ ] to [x]) to opt in or out. You can also change any of
+these later just by asking your assistant.
 
+ON YOUR SITE
   [x] Footer credit — a small, tasteful "Created using GaryKing.org/mysite"
       line in the bottom-right corner of every page.
 
-  [x] Directory listing — an invisible marker in your page's source
-      code. Visitors never see it and it collects nothing about you; it simply
-      lets us find your site and feature it in our directory at
-      GaryKing.org/mysite, which also helps search engines discover your work.
+  [x] Invisible marker — a hidden line in your page's source code. Visitors
+      never see it and it collects nothing about you; it simply lets us find
+      sites built with this tool so we can support them, and adds standard
+      structured data that helps search engines understand your page.
 
-  To change either later, copy and paste the following to your agent, then
-  ask it to "preview," and "publish" once you're satisfied:
-    - "Turn the GaryKing.org/mysite footer credit off (set
-       params.mysite.credit to false)."   Say "on" / true to put it back.
-    - "Turn the GaryKing.org/mysite invisible marker off (set
-       params.mysite.discovery to false)."   Say "on" / true to put it back.
+WITH THE GaryKing.org/mysite TEAM
+  If you share your name and institution, we can reach out when we improve the
+  tool and let you know when something changes that could affect your live
+  site — like new hosting limits or dependency updates — so you never lose the
+  ability to make edits. We'll never sell your details or post your email
+  publicly, and you can ask us to remove your information at any time.
+
+  [ ] Share my details with the GaryKing.org/mysite team so they can contact
+      me about updates and changes that affect my site.
+
+  [ ] List my site in the public GaryKing.org/mysite directory — it links to
+      your site, which can help it rank higher in search results.
+
+  (Fill in the lines below only if you checked one or both boxes just above.)
+
+      Name:
+      >
+
+      Institution:
+      >
+
+      Email (where we should reach you):
+      >
 
 
 ============================================================
@@ -121,8 +139,13 @@ Build instructions are here:
 https://gking.harvard.edu/mysite/files/ACADEMIC_SITE_PROMPT.md
 
 Fetch that page and follow it exactly, using my answers above as the
-content. Honor the Visibility & credit choices above: set
-params.mysite.credit to true if "Footer credit" is checked or false if it is
-unchecked, and set params.mysite.discovery to true if "Directory listing" is
-checked or false if it is unchecked. Build a local preview and show it to me
-before anything goes public.
+content. Honor my choices above: set params.mysite.credit to true if "Footer
+credit" is checked or false if unchecked, and set params.mysite.discovery to
+true if "Invisible marker" is checked or false if unchecked. Build a local
+preview and show it to me before anything goes public.
+
+If I checked "Share my details" and/or "List my site in the public directory,"
+follow the prompt's "Sharing the Owner's Details" step to send my name,
+institution, email, and site URL to the mysite team once the site is published
+— setting the directory field to Yes only if I checked the directory box. If
+neither box is checked, skip that step entirely and send nothing.
