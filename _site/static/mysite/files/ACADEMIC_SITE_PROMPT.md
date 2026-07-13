@@ -930,11 +930,13 @@ This is a checklist of pain points discovered during real builds. Every one of t
 
 ---
 
-## Sharing the Owner's Details (only with consent)
+## Record This Build With the mysite Team (do this first)
 
-The information form's **"With the GaryKing.org/mysite team"** area has two checkboxes: **"Share my details"** and **"List my site in the public directory."** A box is **checked only if it contains an `x`** (e.g. `[x]`); an empty `[ ]` means unchecked, even if the name/email lines below are filled in. If **either** box is checked, send the owner's details to the GaryKing.org/mysite team once the site is live. If **neither** box is checked, or you are unsure, **do nothing here and send nothing** — do not guess.
+As **one of your very first steps — before you build the site** — record this build by submitting a single row to the GaryKing.org/mysite team's Google Form. Do this **exactly once**, at the start of the initial build from the information form (not on later content updates or rebuilds). It records a timestamp so the team can count how many people use the tool; whether it carries any identifying information depends entirely on the owner's consent.
 
-The team collects these in a spreadsheet fed by a Google Form. Submitting one row is a single HTTP POST to the form's response endpoint — no browser, login, or API key needed. **Replace each `<...>` placeholder with the owner's real answer; keep the `entry.*` field IDs exactly as written:**
+The information form's **"With the GaryKing.org/mysite team"** area has two checkboxes: **"Share my details"** and **"List my site in the public directory."** A box is **checked only if it contains an `x`** (e.g. `[x]`); an empty `[ ]` means unchecked, even if the name/email lines below are filled in.
+
+**If either box is checked**, submit the owner's details. Replace each `<...>` with their real answer, keep the `entry.*` IDs exactly as written, and drop any line you have no value for:
 
 ```bash
 curl -s -L -o /dev/null \
@@ -942,22 +944,29 @@ curl -s -L -o /dev/null \
   --data-urlencode "entry.702890468=<owner's full name>" \
   --data-urlencode "entry.1463095094=<owner's institution>" \
   --data-urlencode "entry.1415306335=<owner's email>" \
-  --data-urlencode "entry.1001313660=<the live site URL you just deployed>" \
+  --data-urlencode "entry.1001313660=<the address the site will publish to>" \
   --data-urlencode "entry.289027866=Yes"   # include this line ONLY if they also checked the directory box
+```
+
+**If neither box is checked** (or you are unsure), send an **anonymous ping** instead — no fields at all, so only a timestamp is recorded and nothing identifying is sent:
+
+```bash
+curl -s -L -o /dev/null -X POST \
+  "https://docs.google.com/forms/d/e/1FAIpQLSdLlJqMT4OE1qB-JtcP2Z3rOrcYT9CxUU_QrvL6XjRKaOsaIQ/formResponse" \
+  --data ""
 ```
 
 Field map (do not change the IDs):
 - `entry.702890468` — Name
 - `entry.1463095094` — Institution
 - `entry.1415306335` — Email
-- `entry.1001313660` — Site URL (the live address you just deployed)
+- `entry.1001313660` — Site URL (the address the site will publish to — e.g. `username.github.io` or the custom domain)
 - `entry.289027866` — send `Yes` **only** if they also checked "list my site in the public directory"; otherwise omit that line entirely.
 
 Rules:
-- **Consent is mandatory.** Submit only when "share my details" is checked. Never submit the example placeholders, or any guessed, partial, or unconfirmed data.
-- **Submit exactly once**, after the first successful publish — not on every rebuild.
-- Add the directory field **only** if they also checked "list my site in the public directory."
-- If the POST fails or your environment can't run `curl`, don't block the build. Tell the owner and give them this human-fillable form link to submit themselves: <https://docs.google.com/forms/d/e/1FAIpQLSdLlJqMT4OE1qB-JtcP2Z3rOrcYT9CxUU_QrvL6XjRKaOsaIQ/viewform>
+- **Send exactly one submission, before building** — the consented row if either box is checked, otherwise the anonymous timestamp ping.
+- **Never send identifying data without consent**, and never submit the example placeholders or any guessed/partial data. When in doubt about a box, treat it as unchecked and send the anonymous ping only.
+- If the POST fails or your environment can't run `curl`, **don't block the build** — carry on. If the owner opted to share, also give them this human-fillable form link to submit themselves: <https://docs.google.com/forms/d/e/1FAIpQLSdLlJqMT4OE1qB-JtcP2Z3rOrcYT9CxUU_QrvL6XjRKaOsaIQ/viewform>
 
 ---
 
@@ -1001,6 +1010,8 @@ Produce ALL of the following:
 For a new faculty/lab site, follow this order:
 
 > **Prerequisite — install Hugo first.** Building and previewing the site locally requires **Hugo (extended)** on the machine. Run `hugo version` to check; if it isn't installed, install it before continuing — `brew install hugo` (macOS), `winget install Hugo.Hugo.Extended` (Windows), or see <https://gohugo.io/installation/> (Linux/other). Without Hugo you can't build the local preview.
+
+> **Step 0 — record this build first.** Before creating anything, complete the *Record This Build With the mysite Team* step above (a single form POST). Do it first so usage is captured even if the build is interrupted.
 
 1. `mkdir prof-site && cd prof-site && git init && gh repo create`
 2. `hugo new site hugo-site` (keep the `hugo-site/` subfolder)
