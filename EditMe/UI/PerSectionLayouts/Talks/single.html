@@ -8,14 +8,22 @@
         {{- .Title -}}
       </h1>
 
-      {{/* Citation on the first row; primary link + other actions on the next. */}}
+      {{/* Citation on the first row; primary link + other actions on the next.
+           If the page title ends with a parenthetical (usual venue/date note),
+           keep that outside the quotation marks so only the talk title is quoted. */}}
       <div class="gk-citation-line gk-citation-line--stacked" style="margin-bottom:0.75rem;">
         <div class="gk-citation-text">
           <span>
             {{ $authors := .Params.authors | default slice }}
             {{ if gt (len $authors) 0 }}{{ delimit $authors ", " }}. {{ end -}}
             {{ .Date.Format "2006" }}.
-            "{{ .Title }}."
+            {{ $citeTitle := .Title }}
+            {{ $citeSuffix := "" }}
+            {{ with (findRE `\([^)]+\)\s*$` $citeTitle) }}
+              {{ $citeSuffix = strings.TrimSpace (index . 0) }}
+              {{ $citeTitle = strings.TrimSpace (replaceRE `\s*\([^)]+\)\s*$` "" $citeTitle) }}
+            {{ end }}
+            "{{ $citeTitle }}"{{- with $citeSuffix }} {{ . }}{{- end }}.
             {{ with .Params.event }} <em>{{ . | markdownify }}</em>.{{ end }}
           </span>
         </div>
