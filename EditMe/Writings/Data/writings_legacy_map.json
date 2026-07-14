@@ -585,8 +585,8 @@
       "drupal": "journal_article"
     },
     "the-balance-sample-size-frontier-in-matching-methods-for-causal-inference": {
-      "tab": "presentation",
-      "drupal": "presentation"
+      "tab": "journal",
+      "drupal": "journal_article"
     },
     "boocio-an-education-system-with-hierarchical-concept-maps": {
       "tab": "journal",
@@ -1121,8 +1121,8 @@
       "drupal": "journal_article"
     },
     "comparative-effectiveness-of-matching-methods-for-causal-inference": {
-      "tab": "presentation",
-      "drupal": "presentation"
+      "tab": "journal",
+      "drupal": "journal_article"
     },
     "avoiding-randomization-failure-in-program-evaluation": {
       "tab": "journal",
