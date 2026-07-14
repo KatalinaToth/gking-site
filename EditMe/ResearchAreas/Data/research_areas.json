@@ -732,7 +732,7 @@
       "description": "How to save 99% of your data collection costs; bias corrections for logistic regression in estimating probabilities and causal effects in rare events data; estimating base probabilities or any quantity from case-control data; automated coding of events.",
       "subcategories": [
         {
-          "name": "Bias Correction",
+          "name": "Articles",
           "papers": [
             {
               "title": "Explaining Rare Events in International Relations",
@@ -743,12 +743,7 @@
               "title": "Logistic Regression in Rare Events Data",
               "section": "publication",
               "slug": "logistic-regression-in-rare-events-data"
-            }
-          ]
-        },
-        {
-          "name": "Estimating Base Probabilities",
-          "papers": [
+            },
             {
               "title": "Estimating Risk and Rate Levels, Ratios, and Differences in Case-Control Studies",
               "section": "publication",
@@ -758,22 +753,12 @@
               "title": "Inference in Case-Control Studies",
               "section": "publication",
               "slug": "inference-in-case-control-studies"
-            }
-          ]
-        },
-        {
-          "name": "Hidden Region 1",
-          "papers": [
+            },
             {
               "title": "Improving Forecasts of State Failure",
               "section": "publication",
               "slug": "improving-forecasts-of-state-failure"
-            }
-          ]
-        },
-        {
-          "name": "Hidden Region 2",
-          "papers": [
+            },
             {
               "title": "Aggregation Among Binary, Count, and Duration Models: Estimating the Same Quantities from Different Levels of Data",
               "section": "publication",
@@ -1012,7 +997,7 @@
       "description": "The accuracy of U.S. Social Security Administration (SSA) demographic and financial forecasts is crucial for the solvency of its Trust Funds, government programs comprising greater than 50% of all federal government expenditures, industry decision making, and the evidence base of many scholarly articles.",
       "subcategories": [
         {
-          "name": "Articles and Presentations",
+          "name": "Articles",
           "papers": [
             {
               "title": "Explaining Systematic Bias and Nontransparency in US Social Security Administration Forecasts",
@@ -1023,12 +1008,7 @@
               "title": "Systematic Bias and Nontransparency in US Social Security Administration Forecasts",
               "section": "publication",
               "slug": "systematic-bias-and-nontransparency-in-us-social-security-administration-forecasts"
-            }
-          ]
-        },
-        {
-          "name": "Related Materials",
-          "papers": [
+            },
             {
               "title": "Demographic Forecasting",
               "section": "publication",
