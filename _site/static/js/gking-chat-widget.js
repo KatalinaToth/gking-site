@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.2.2";
+  var WIDGET_VERSION = "1.3.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -121,6 +121,12 @@
     "  color: #3a4a6b;",
     "}",
     ".panel[hidden] { display: none; }",
+    ".panel.fullscreen {",
+    "  top: 0; left: 0; right: 0; bottom: 0;",
+    "  width: 100%; height: 100%;",
+    "  border-radius: 0; border: none;",
+    "  box-shadow: none;",
+    "}",
     ".header {",
     "  padding: 14px 16px;",
     "  background: linear-gradient(135deg, #5876a9, #abc5ec);",
@@ -141,10 +147,11 @@
     "  display: inline-block; width: 6px; height: 6px; border-radius: 50%;",
     "  background: #1bbc9d; margin-right: 6px; vertical-align: middle;",
     "}",
-    ".header .close {",
+    ".header .close, .header .expand, .header .minimize {",
     "  background: transparent; border: none; color: #fff;",
     "  opacity: 0.9; cursor: pointer; padding: 4px; display: flex;",
     "}",
+    ".header .close:hover, .header .expand:hover, .header .minimize:hover { opacity: 1; }",
     ".messages {",
     "  flex: 1; overflow-y: auto;",
     "  padding: 14px 14px 6px;",
@@ -483,6 +490,8 @@
     "    box-shadow: none;",
     "  }",
     "  .header { padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }",
+    // The panel is already full-screen on mobile — the expand toggle is meaningless there.
+    "  .header .expand { display: none; }",
     "  .messages { padding: 10px; }",
     "  .bubble { max-width: 95%; }",
     "  .input-row { padding: 8px 8px max(8px, env(safe-area-inset-bottom)); gap: 6px; }",
@@ -511,6 +520,21 @@
     '      <div class="name"></div>',
     '      <div class="status" style="display:none;"></div>',
     '    </div>',
+    '    <button class="expand" type="button" aria-label="Full screen">',
+    '      <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">',
+    '        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>',
+    '        <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+    '      </svg>',
+    '      <svg class="icon-restore" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:none;">',
+    '        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>',
+    '        <line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>',
+    '      </svg>',
+    '    </button>',
+    '    <button class="minimize" type="button" aria-label="Minimize">',
+    '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">',
+    '        <line x1="5" y1="12" x2="19" y2="12"/>',
+    '      </svg>',
+    '    </button>',
     '    <button class="close" type="button" aria-label="Close">',
     '      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">',
     '        <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
@@ -797,6 +821,10 @@
     var headerAvatar = shadow.querySelector(".header .avatar");
     var headerName = shadow.querySelector(".header .name");
     var closeBtn = shadow.querySelector(".close");
+    var expandBtn = shadow.querySelector(".expand");
+    var iconExpand = shadow.querySelector(".icon-expand");
+    var iconRestore = shadow.querySelector(".icon-restore");
+    var minimizeBtn = shadow.querySelector(".minimize");
     var messagesEl = shadow.querySelector(".messages");
     var textarea = shadow.querySelector(".input-row textarea");
     var sendBtn = shadow.querySelector(".send");
@@ -1098,14 +1126,28 @@
       }
     }
 
+    var fullscreen = false;
+    function setFullscreen(next) {
+      fullscreen = next;
+      panel.classList.toggle("fullscreen", fullscreen);
+      iconExpand.style.display = fullscreen ? "none" : "";
+      iconRestore.style.display = fullscreen ? "" : "none";
+      expandBtn.setAttribute("aria-label", fullscreen ? "Exit full screen" : "Full screen");
+      lockPageScroll(open && (isMobileViewport() || fullscreen));
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
     function setOpen(next) {
       open = next;
       panel.hidden = !open;
+      // Closing always restores the default popup size, so reopening never
+      // surprises the user with a full-screen takeover.
+      if (!open && fullscreen) setFullscreen(false);
       btn.setAttribute("aria-label", open ? "Close chat" : "Open chat");
       iconChat.style.display = open ? "none" : "";
       iconClose.style.display = open ? "" : "none";
       var mobile = isMobileViewport();
-      lockPageScroll(open && mobile);
+      lockPageScroll(open && (mobile || fullscreen));
       if (open) {
         firePixel("widget");
         renderMessages();
@@ -1296,6 +1338,12 @@
       setOpen(!open);
     });
     closeBtn.addEventListener("click", function () {
+      setOpen(false);
+    });
+    expandBtn.addEventListener("click", function () {
+      setFullscreen(!fullscreen);
+    });
+    minimizeBtn.addEventListener("click", function () {
       setOpen(false);
     });
     sendBtn.addEventListener("click", handleSendClick);
