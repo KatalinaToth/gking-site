@@ -188,7 +188,7 @@
       "tab": "presentation",
       "drupal": "presentation"
     },
-    "statistically-valid-inferences-from-privacy-protected-data-institute-for-analytical-sociology-norrk\u00f6ping-sweden": {
+    "statistically-valid-inferences-from-privacy-protected-data-institute-for-analytical-sociology-norrköping-sweden": {
       "tab": "presentation",
       "drupal": "presentation"
     },
@@ -492,7 +492,7 @@
       "tab": "presentation",
       "drupal": "presentation"
     },
-    "psi-\u03c8-a-private-data-sharing-interface": {
+    "psi-ψ-a-private-data-sharing-interface": {
       "tab": "software",
       "drupal": "software"
     },
@@ -1987,6 +1987,10 @@
     "wheres-the-evidence-that-respondents-understand-your-survey-questions": {
       "tab": "journal",
       "drupal": "working_paper"
+    },
+    "advancing-science-by-designing-for-surprise": {
+      "tab": "journal",
+      "drupal": "journal_article"
     }
   }
 }
