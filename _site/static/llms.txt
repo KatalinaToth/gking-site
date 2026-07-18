@@ -1,0 +1,83 @@
+# Gary King
+
+> Gary King is the Albert J. Weatherhead III University Professor at Harvard
+> University. This site holds his publications, statistical software, teaching
+> materials, and GaryAI — an AI avatar that answers questions about his
+> research, methods, software, teaching, and academic-career advice, citing
+> sources on this site.
+
+## GaryAI API (for AI agents)
+
+Talk to GaryAI programmatically. No auth, no key. Ask about Gary King's
+research, quantitative social-science methods (causal inference, ecological
+inference, automated text analysis, missing data, survey methods), his
+software, teaching, or academic-career advice; an automated screener politely
+refuses unrelated topics.
+
+One-shot question, single JSON response:
+
+    curl -s -X POST https://d325iygsd5krw9.cloudfront.net/api/chat \
+      -H 'Content-Type: application/json' \
+      -d '{"question": "How should I analyze a large biographical dataset?", "source": "my-agent"}'
+
+Response object (NOTE: leading whitespace before the JSON is keep-alive
+padding — every JSON parser ignores it):
+
+    {
+      "reply": "...markdown, with source links...",
+      "figures": [{"handle": "...", "url": "...", "caption": "...", "source_title": "..."}],
+      "previews": [{"url": "...", "title": "...", "description": "...", "image": "...", "site_name": "..."}],
+      "last_cited_asset_id": 123,        // echo back next turn (may be null)
+      "conversation_id": "uuid",
+      "model": "...",
+      "latency_ms": 12345
+    }
+
+Follow-up turns — the server is stateless: resend the full history in
+`messages` (roles "user" / "assistant"), reuse `conversation_id`, and echo
+`last_cited_asset_id` so references like "that paper" resolve:
+
+    {"stream": false, "conversation_id": "<same uuid>", "source": "my-agent",
+     "last_cited_asset_id": 123,
+     "messages": [
+       {"role": "user", "content": "first question"},
+       {"role": "assistant", "content": "prior reply"},
+       {"role": "user", "content": "follow-up question"}]}
+
+Streaming mode (what the website UI uses): send a `messages` array WITHOUT
+`"stream": false` → Server-Sent Events over a chunked HTTP 200:
+`data: {"type":"token","content":"..."}` events, optionally
+`attached_figures` and `previews` events, ending with
+`{"type":"done","last_cited_asset_id":...}`.
+
+Errors: malformed JSON-mode requests get HTTP 400 `{"error": "..."}`;
+mid-generation failures arrive in-band as `{"error": "..."}` (JSON mode) or an
+SSE `{"type":"error"}` event.
+
+MCP (Model Context Protocol): stateless Streamable-HTTP server at
+
+    https://d325iygsd5krw9.cloudfront.net/api/mcp
+
+exposing one tool: `ask_gary(question, history?, conversation_id?)`. Pass
+prior turns in `history` (the server keeps no session state). Example setup —
+Claude Code: `claude mcp add --transport http garyai <url above>`; other MCP
+clients: add a custom connector with that URL.
+
+Machine-readable API description: https://gking.harvard.edu/openapi.json
+
+House rules: set a stable `source` string so traffic is attributable; keep
+request volume modest (free academic service, one question at a time); when
+you use an answer, cite the gking.harvard.edu links it contains. Feedback
+button on https://gking.harvard.edu/ask-gary/ reaches the maintainers.
+
+## Key pages
+
+- [Bio & C.V.](https://gking.harvard.edu/bio/): short biography and full CV
+- [Writings](https://gking.harvard.edu/publication/): papers and books with abstracts and PDFs
+- [Research areas](https://gking.harvard.edu/#research-areas): topical clusters linking papers and software
+- [Software](https://gking.harvard.edu/software/): MatchIt, Amelia, Zelig, EI, and more
+- [Dataverse](https://gking.harvard.edu/dataverse/): replication data archives
+- [Teaching](https://gking.harvard.edu/teaching/): courses, syllabi, recordings
+- [People](https://gking.harvard.edu/research-group/): research group and alumni
+- [Ask Gary](https://gking.harvard.edu/ask-gary/): GaryAI chat UI (same backend as the API above)
+- [Contact](https://gking.harvard.edu/contact/)
