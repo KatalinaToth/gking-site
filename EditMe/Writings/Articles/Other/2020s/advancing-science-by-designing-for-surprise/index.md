@@ -18,4 +18,6 @@ links:
     url: "files/advancing-science-by-designing-for-surprise.pdf"
   - type: source
     url: "https://www.science.org/doi/10.1126/science.aej4257"
+image:
+  alt_text: "Diagram of three logics of science: Deduction (Mathematics), Induction (Statistics), and Abduction (not yet formalized), connected by Predicts, Tests, and Surprises."
 ---
