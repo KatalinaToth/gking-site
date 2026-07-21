@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.3.0";
+  var WIDGET_VERSION = "1.4.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -862,6 +862,35 @@
       if (!conversationId) conversationId = uuid();
       return conversationId;
     }
+
+    // Click-through beacon: one delegated listener catches every link in the
+    // messages area (inline citations, preview cards, figures, site-preview).
+    // Same GET-pixel endpoint as the page-view tracker; links open in _blank
+    // so the page survives to deliver the request.
+    function fireClickBeacon(a) {
+      try {
+        var href = a.href || "";
+        if (!/^https?:/i.test(href)) return;
+        var kind = "inline";
+        if (a.classList.contains("preview-card")) kind = "preview";
+        else if (a.classList.contains("site-preview-link")) kind = "site";
+        else if (a.closest && a.closest(".figure")) kind = "figure";
+        new Image().src =
+          PIXEL_URL + "?e=click&t=widget" +
+          "&url=" + encodeURIComponent(href) +
+          "&k=" + kind +
+          "&c=" + encodeURIComponent(conversationId || "") +
+          "&u=" + encodeURIComponent(location.host + location.pathname) +
+          "&_=" + Date.now();
+      } catch (e) {}
+    }
+    function onMessagesClick(ev) {
+      if (ev.type === "auxclick" && ev.button !== 1) return;
+      var a = ev.target && ev.target.closest ? ev.target.closest("a") : null;
+      if (a) fireClickBeacon(a);
+    }
+    messagesEl.addEventListener("click", onMessagesClick);
+    messagesEl.addEventListener("auxclick", onMessagesClick);
 
     function snapshotMessages() {
       return messages.map(function (m) {
