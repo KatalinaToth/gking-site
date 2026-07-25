@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.4.0";
+  var WIDGET_VERSION = "1.4.1";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -434,53 +434,6 @@
     "  font-size: 10px; font-weight: 700; line-height: 1;",
     "  padding: 2px 4px; border-radius: 3px;",
     "}",
-    ".site-preview {",
-    "  margin-top: 10px; padding-top: 8px;",
-    "  border-top: 1px dashed #dde8f5;",
-    "  display: flex; flex-direction: column; gap: 8px;",
-    "}",
-    ".site-preview-label {",
-    "  font-size: 9px; font-weight: 700; letter-spacing: 1.2px;",
-    "  text-transform: uppercase; color: #8a9ab8;",
-    "}",
-    ".site-preview-block {",
-    "  background: #f7f9fc; border: 1px solid #dde8f5;",
-    "  border-radius: 8px; padding: 8px 10px; font-size: 12px;",
-    "}",
-    ".site-preview-block-title {",
-    "  font-size: 9px; font-weight: 700; letter-spacing: 1.2px;",
-    "  text-transform: uppercase; color: #8a9ab8; margin-bottom: 6px;",
-    "}",
-    ".site-preview-nav { display: flex; flex-wrap: wrap; gap: 4px; }",
-    ".site-preview-nav-item {",
-    "  background: #fff; border: 1px solid #dde8f5; border-radius: 5px;",
-    "  padding: 3px 8px; font-size: 11px; color: #7a8fb5; font-weight: 500;",
-    "}",
-    ".site-preview-nav-item.active {",
-    "  background: linear-gradient(135deg, #5876a9, #abc5ec);",
-    "  border-color: transparent; color: #fff; font-weight: 700;",
-    "}",
-    ".site-preview-path {",
-    "  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;",
-    "}",
-    ".site-preview-path-crumb {",
-    "  background: #fff; border: 1px solid #dde8f5; border-radius: 5px;",
-    "  padding: 2px 8px; font-size: 11px; color: #7a8fb5;",
-    "}",
-    ".site-preview-path-crumb.last { color: #5876a9; font-weight: 700; }",
-    ".site-preview-path-sep { color: #b0bfd4; font-weight: 700; }",
-    ".site-preview-steps { display: flex; flex-direction: column; gap: 5px; }",
-    ".site-preview-step { display: flex; gap: 8px; align-items: flex-start; }",
-    ".site-preview-step-num {",
-    "  min-width: 18px; height: 18px; border-radius: 50%;",
-    "  background: linear-gradient(135deg, #5876a9, #abc5ec);",
-    "  color: #fff; font-size: 10px; font-weight: 700;",
-    "  display: flex; align-items: center; justify-content: center; flex-shrink: 0;",
-    "}",
-    ".site-preview-step-text { font-size: 12px; color: #3a4a6b; line-height: 1.5; }",
-    ".site-preview-link {",
-    "  align-self: flex-start; font-size: 11px; color: #5876a9; text-decoration: underline;",
-    "}",
     "@media (max-width: 600px) {",
     "  .btn { right: 16px; bottom: 16px; width: 52px; height: 52px; }",
     "  .panel {",
@@ -609,99 +562,6 @@
   function hostOf(u) {
     try { return new URL(u).hostname; }
     catch (e) { return u; }
-  }
-
-  var SITE_NAV = [
-    { name: "Bio & C.V.",     url: "/bio/" },
-    { name: "Writings",       url: "/publication/" },
-    { name: "Research Areas", url: "/#research-areas" },
-    { name: "Software",       url: "/software/" },
-    { name: "Dataverse",      url: "/dataverse/" },
-    { name: "People",         url: "/research-group/" },
-    { name: "Teaching",       url: "/teaching/" },
-    { name: "GaryAI",         url: "/ask-gary/" },
-    { name: "Contact",        url: "/contact/" }
-  ];
-
-  var SECTIONS = {
-    bio:       { active: "Bio & C.V.",     path: ["Home", "Bio & C.V."],     url: "/bio/",            label: "Bio & C.V.",     steps: ["Click <strong>Bio &amp; C.V.</strong> in the top navigation", "Read the short biography and download the full CV"] },
-    writings:  { active: "Writings",       path: ["Home", "Writings"],       url: "/publication/",    label: "Writings page",  steps: ["Click <strong>Writings</strong> in the top navigation", "Filter by type (articles, books, slides, briefs) or research area", "Click any title to open the abstract and PDF"] },
-    research:  { active: "Research Areas", path: ["Home", "Research Areas"], url: "/#research-areas", label: "Research Areas", steps: ["Click <strong>Research Areas</strong> in the top navigation", "Browse the topical clusters (Causal Inference, Health Policy, &hellip;)", "Each card links to related papers and software"] },
-    software:  { active: "Software",       path: ["Home", "Software"],       url: "/software/",       label: "Software index", steps: ["Click <strong>Software</strong> in the top navigation", "Pick a package (Amelia, MatchIt, Zelig, &hellip;)", "Each page has install commands, vignettes, and citations"] },
-    dataverse: { active: "Dataverse",      path: ["Home", "Dataverse"],      url: "/dataverse/",      label: "Dataverse",      steps: ["Click <strong>Dataverse</strong> in the top navigation", "Find replication archives for published papers"] },
-    people:    { active: "People",         path: ["Home", "People"],         url: "/research-group/", label: "Research group", steps: ["Click <strong>People</strong> in the top navigation", "Browse current group members, alumni, and collaborators"] },
-    teaching:  { active: "Teaching",       path: ["Home", "Teaching"],       url: "/teaching/",       label: "Teaching page",  steps: ["Click <strong>Teaching</strong> in the top navigation", "See current courses, syllabi, and recordings where available"] },
-    askgary:   { active: "GaryAI",         path: ["Home", "GaryAI"],         url: "/ask-gary/",       label: "GaryAI chat",    steps: ["Click <strong>GaryAI</strong> in the top navigation", "Type a question &mdash; that&rsquo;s this chatbot!"] },
-    contact:   { active: "Contact",        path: ["Home", "Contact"],        url: "/contact/",        label: "Contact page",   steps: ["Click <strong>Contact</strong> in the top navigation", "Find email, office address, and assistant info"] }
-  };
-
-  var SITE_KEYWORD_MAP = [
-    { keys: ["bio", "biography", "cv", "curriculum vitae", "resume", "about gary"], key: "bio" },
-    { keys: ["writing", "paper", "publication", "article", "book", "preprint", "pdf", "slides", "presentation", "talk"], key: "writings" },
-    { keys: ["research area", "research topic", "topic", "what does gary work on", "research interest"], key: "research" },
-    { keys: ["software", "package", "amelia", "matchit", "zelig", "ei ", "ezi", "r package", "stata"], key: "software" },
-    { keys: ["dataverse", "replication", "dataset", "data archive"], key: "dataverse" },
-    { keys: ["people", "research group", "lab member", "student", "collaborator", "alumni", "postdoc"], key: "people" },
-    { keys: ["teaching", "course", "syllabus", "class", "lecture"], key: "teaching" },
-    { keys: ["ask gary", "garyai", "chatbot", "this bot", "the avatar", "this chat"], key: "askgary" },
-    { keys: ["contact", "email", "reach", "office", "address"], key: "contact" }
-  ];
-
-  function findSitePreview(query) {
-    var q = String(query || "").toLowerCase();
-    if (!q) return null;
-    for (var i = 0; i < SITE_KEYWORD_MAP.length; i++) {
-      var entry = SITE_KEYWORD_MAP[i];
-      for (var j = 0; j < entry.keys.length; j++) {
-        if (q.indexOf(entry.keys[j]) !== -1) return SECTIONS[entry.key];
-      }
-    }
-    return null;
-  }
-
-  function renderSitePreviewHtml(p) {
-    if (!p) return "";
-    var navHtml = SITE_NAV.map(function (item) {
-      var cls = item.name === p.active ? "site-preview-nav-item active" : "site-preview-nav-item";
-      return '<span class="' + cls + '">' + escapeHtml(item.name) + "</span>";
-    }).join("");
-    var pathHtml = p.path
-      .map(function (c, i) {
-        var cls = i === p.path.length - 1 ? "site-preview-path-crumb last" : "site-preview-path-crumb";
-        var sep = i < p.path.length - 1 ? '<span class="site-preview-path-sep">&rsaquo;</span>' : "";
-        return '<span class="' + cls + '">' + escapeHtml(c) + "</span>" + sep;
-      })
-      .join("");
-    var stepsHtml = (p.steps || [])
-      .map(function (s, i) {
-        return (
-          '<div class="site-preview-step">' +
-          '<div class="site-preview-step-num">' + (i + 1) + "</div>" +
-          '<div class="site-preview-step-text">' + s + "</div>" +
-          "</div>"
-        );
-      })
-      .join("");
-    var link = p.url
-      ? '<a class="site-preview-link" href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener">Open ' + escapeHtml(p.label) + " &rarr;</a>"
-      : "";
-    return (
-      '<div class="site-preview">' +
-      '<div class="site-preview-label">Site preview &mdash; ' + escapeHtml(p.label) + "</div>" +
-      '<div class="site-preview-block">' +
-      '<div class="site-preview-block-title">Top navigation</div>' +
-      '<div class="site-preview-nav">' + navHtml + "</div>" +
-      "</div>" +
-      '<div class="site-preview-block">' +
-      '<div class="site-preview-block-title">Where to go</div>' +
-      '<div class="site-preview-path">' + pathHtml + "</div>" +
-      "</div>" +
-      (stepsHtml
-        ? '<div class="site-preview-block"><div class="site-preview-block-title">Steps</div><div class="site-preview-steps">' + stepsHtml + "</div></div>"
-        : "") +
-      link +
-      "</div>"
-    );
   }
 
   function renderPreviewsHtml(previews) {
@@ -864,7 +724,7 @@
     }
 
     // Click-through beacon: one delegated listener catches every link in the
-    // messages area (inline citations, preview cards, figures, site-preview).
+    // messages area (inline citations, preview cards, figures).
     // Same GET-pixel endpoint as the page-view tracker; links open in _blank
     // so the page survives to deliver the request.
     function fireClickBeacon(a) {
@@ -873,7 +733,6 @@
         if (!/^https?:/i.test(href)) return;
         var kind = "inline";
         if (a.classList.contains("preview-card")) kind = "preview";
-        else if (a.classList.contains("site-preview-link")) kind = "site";
         else if (a.closest && a.closest(".figure")) kind = "figure";
         new Image().src =
           PIXEL_URL + "?e=click&t=widget" +
@@ -1089,7 +948,6 @@
             var showExtras = !(streaming && isLastForFigs);
             var showFigures = m.figures && m.figures.length > 0 && showExtras;
             var showPreviews = m.previews && m.previews.length > 0 && showExtras;
-            var showSitePreview = m.sitePreview && showExtras;
             node.innerHTML =
               '<div class="avatar-sm">' +
               escapeHtml(config.avatarLabel) +
@@ -1097,7 +955,6 @@
               renderInline(visible) +
               (showPreviews ? renderPreviewsHtml(m.previews) : "") +
               (showFigures ? renderFiguresHtml(m.figures) : "") +
-              (showSitePreview ? renderSitePreviewHtml(m.sitePreview) : "") +
               "</div>";
           }
           messagesEl.appendChild(node);
@@ -1255,7 +1112,6 @@
       if (!text || loading) return;
       textarea.value = "";
       ensureConversationId();
-      var pendingSitePreview = findSitePreview(text);
       messages.push({ id: uuid(), role: "user", content: text });
       setLoading(true);
 
@@ -1278,7 +1134,7 @@
           var reader = res.body.getReader();
           var decoder = new TextDecoder();
           var buffer = "";
-          messages.push({ id: uuid(), role: "assistant", content: "", sitePreview: pendingSitePreview });
+          messages.push({ id: uuid(), role: "assistant", content: "" });
           var idx = messages.length - 1;
           streaming = true;
           setLoading(false);
@@ -1335,7 +1191,7 @@
             "Sorry, I couldn't generate a response.";
           var figs = data && Array.isArray(data.figures) ? data.figures : [];
           var previews = data && Array.isArray(data.previews) ? data.previews : [];
-          messages.push({ id: uuid(), role: "assistant", content: reply, figures: figs, previews: previews, sitePreview: pendingSitePreview });
+          messages.push({ id: uuid(), role: "assistant", content: reply, figures: figs, previews: previews });
           maybeShowSessionRating();
           setLoading(false);
         }
