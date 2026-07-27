@@ -10,11 +10,11 @@ url: /conjointE/
 aliases:
   - /publication/correcting-measurement-error-bias-in-conjoint-survey-experiments/
   - /conjointe/
-date: "2025-01-01"
+date: "2026-01-01"
 authors:
   - "Katherine Clayton"
   - "Yusaku Horiuchi"
-  - "Aaron R. Kaufman"
+  - "Aaron Kaufman"
   - "Gary King"
   - "Mayya Komisarchik"
 publication_types:
@@ -29,5 +29,8 @@ links:
   - type: appendix
     label: Appendix
     url: "files/conerr-supp.pdf"
-publication: "American Journal of Political Science"
+  - type: source
+    label: Publisher's Version
+    url: "https://onlinelibrary.wiley.com/doi/10.1111/ajps.70076"
+publication: "American Journal of Political Science, Pp. 1–19. [https://doi.org/10.1111/ajps.70076](https://doi.org/10.1111/ajps.70076). [https://GaryKing.org/conjointE](https://GaryKing.org/conjointE)"
 ---
