@@ -361,7 +361,7 @@
           
           // Process results
           this.results = await Promise.all(
-            search.results.slice(0, 10).map(async (result) => {
+            search.results.slice(0, 50).map(async (result) => {
               const data = await result.data();
               console.log('Result data:', data);
               return {
