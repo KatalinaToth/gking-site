@@ -737,6 +737,30 @@ button.gk-cite-button:focus-visible {
   }
 }
 
+/* ---- Copy-link anchors (Research Areas + Startups) ---- */
+.gk-hp-anchor {
+  margin-left: auto;
+  opacity: 0;
+  font-size: 0.75em;
+  text-decoration: none;
+  color: #999;
+  transition: opacity 0.15s, color 0.15s;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.gk-startup-dropdown:hover .gk-hp-anchor,
+.gk-startup-dropdown:focus-within .gk-hp-anchor {
+  opacity: 1;
+}
+.gk-hp-anchor:hover {
+  color: #337ab7;
+}
+.gk-startup-dropdown:target {
+  outline: 2px solid #337ab7;
+  outline-offset: 2px;
+}
+
 /* ---- Startups section (dropdown style) ---- */
 .gk-startup-dropdown {
   margin-bottom: 0.5rem;

@@ -332,12 +332,15 @@
 <section class="gk-hp-section">
   <div class="gk-hp-grid">
 
-    <!-- Startups (order: chronological / narrative flow — oldest ventures first) -->
-    <div class="gk-hp-card">
+    <!-- Startups (order: chronological / narrative flow — oldest ventures first).
+         Per-startup 🔗 anchors copy the canonical /startups/#slug URL (same as
+         the dedicated Startups page), matching the Research Areas copy-link UX. -->
+    <div class="gk-hp-card" id="gk-hp-startups">
       <h3 class="gk-hp-card__heading">Startups</h3>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><span style="display:inline-flex;align-items:center;gap:0.45rem;vertical-align:middle"><img class="gk-hp-startup-logo" src="{{ "startups/crimson-hexagon/logo.png" | relURL }}" alt="Crimson Hexagon" style="height:26px;width:auto;display:block"><span style="color:#be3a34;font-weight:600">Crimson Hexagon</span></span>
+          <a class="gk-hp-anchor" href="{{ "startups/#crimson-hexagon" | relURL }}" title="Copy link to Crimson Hexagon" aria-label="Link to Crimson Hexagon">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__pub">Merged with Brandwatch, acquired by Cision</div>
@@ -348,9 +351,10 @@
           </div>
         </div>
       </details>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><img class="gk-hp-startup-logo" src="{{ "startups/thresher/logo.png" | relURL }}" alt="Thresher" style="height:26px;width:auto;max-width:200px;vertical-align:middle">
+          <a class="gk-hp-anchor" href="{{ "startups/#thresher" | relURL }}" title="Copy link to Thresher" aria-label="Link to Thresher">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__pub">Acquired by Two Six Technologies, a Carlyle Company</div>
@@ -361,9 +365,10 @@
           </div>
         </div>
       </details>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><img class="gk-hp-startup-logo" src="{{ "startups/learning-catalytics/logo.png" | relURL }}" alt="Learning Catalytics" style="height:26px;width:auto;max-width:200px;vertical-align:middle">
+          <a class="gk-hp-anchor" href="{{ "startups/#learning-catalytics" | relURL }}" title="Copy link to Learning Catalytics" aria-label="Link to Learning Catalytics">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__pub">Acquired by Pearson</div>
@@ -374,26 +379,29 @@
           </div>
         </div>
       </details>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><img class="gk-hp-startup-logo" src="{{ "startups/openscholar/logo.png" | relURL }}" alt="OpenScholar" style="height:26px;width:auto;max-width:200px;vertical-align:middle">
+          <a class="gk-hp-anchor" href="{{ "startups/#openscholar" | relURL }}" title="Copy link to OpenScholar" aria-label="Link to OpenScholar">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__pub">Acquired by Monomyth Group</div>
           <div class="gk-hp-item__more"><a href="https://theopenscholar.com/" target="_blank" rel="noopener">Visit site &rarr;</a></div>
         </div>
       </details>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><img class="gk-hp-startup-logo" src="{{ "startups/perusall/logo.png" | relURL }}" alt="Perusall" style="height:26px;width:auto;max-width:200px;vertical-align:middle">
+          <a class="gk-hp-anchor" href="{{ "startups/#perusall" | relURL }}" title="Copy link to Perusall" aria-label="Link to Perusall">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__more"><a href="https://www.perusall.com/" target="_blank" rel="noopener">Visit site &rarr;</a></div>
         </div>
       </details>
-      <details class="gk-hp-item">
+      <details class="gk-hp-item gk-hp-startup">
         <summary class="gk-hp-item__summary">
           <span class="gk-hp-arrow" aria-hidden="true">&#9660;</span><img class="gk-hp-startup-logo" src="{{ "startups/quickcode/logo.png" | relURL }}" alt="QuickCode" style="height:26px;width:auto;max-width:200px;vertical-align:middle">
+          <a class="gk-hp-anchor" href="{{ "startups/#quickcode" | relURL }}" title="Copy link to QuickCode" aria-label="Link to QuickCode">&#128279;</a>
         </summary>
         <div class="gk-hp-item__body">
           <div class="gk-hp-item__more"><a href="https://www.quickcode.ai/" target="_blank" rel="noopener">Visit site &rarr;</a></div>
@@ -403,6 +411,28 @@
            as one atomic word and can't break between the quote and the title. */}}
       <p class="gk-hp-card__news">News story: <a href="https://www.thecrimson.com/article/2024/3/9/gary-king-profile/" target="_blank" rel="noopener" data-archive-url="{{ "entrepreneurial-academia/" | relURL }}">&ldquo;Entrepreneurial Academia with Gary King&rdquo;</a></p>
     </div>
+    <script>
+    (function () {
+      /* Copy-link for homepage startups: same UX as Research Areas, but the
+         href is the canonical /startups/#slug URL (not a homepage hash). */
+      var card = document.getElementById('gk-hp-startups');
+      if (!card) return;
+      card.querySelectorAll('.gk-hp-anchor').forEach(function (a) {
+        a.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var href = a.getAttribute('href') || '';
+          var url = href.charAt(0) === '/' ? (location.origin + href) : (location.origin + location.pathname + href);
+          navigator.clipboard.writeText(url).then(function () {
+            var orig = a.textContent;
+            a.textContent = '✓ Copied';
+            a.style.opacity = '1';
+            setTimeout(function () { a.textContent = orig; a.style.opacity = ''; }, 1500);
+          });
+        });
+      });
+    })();
+    </script>
 
     <!-- Patents (4 most recent) -->
     <div class="gk-hp-card">
@@ -533,9 +563,12 @@
     transition: opacity 0.15s, color 0.15s;
     padding: 2px 4px;
     line-height: 1;
+    flex-shrink: 0;
   }
   .gk-hp-area:hover .gk-hp-anchor,
-  .gk-hp-area:focus-within .gk-hp-anchor { opacity: 1; }
+  .gk-hp-area:focus-within .gk-hp-anchor,
+  .gk-hp-startup:hover .gk-hp-anchor,
+  .gk-hp-startup:focus-within .gk-hp-anchor { opacity: 1; }
   .gk-hp-anchor:hover { color: #337ab7; }
   .gk-hp-area:target { outline: 2px solid #337ab7; outline-offset: 2px; }
 

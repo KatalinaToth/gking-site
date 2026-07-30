@@ -25,6 +25,7 @@
       {{ end }}
       <span class="gk-startup-dropdown__title">{{ .Title }}</span>
       {{ with .Params.summary }}<span class="gk-startup-dropdown__subtitle">&mdash; {{ . }}</span>{{ end }}
+      <a class="gk-hp-anchor" href="#{{ $slug }}" title="Copy link to {{ .Title }}" aria-label="Link to {{ .Title }}">&#128279;</a>
     </summary>
     <div class="gk-startup-dropdown__body">
       {{ if or $featured $hasStory }}
@@ -55,23 +56,47 @@
 
 <script>
 (function() {
-  if (location.hash) {
-    var el = document.getElementById(location.hash.substring(1));
-    if (el && el.tagName === 'DETAILS') {
-      el.open = true;
-      setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
-    }
+  var items = document.querySelectorAll('details.gk-startup-dropdown');
+
+  function openByHash() {
+    var hash = location.hash.replace('#', '');
+    if (!hash) return;
+    var el = document.getElementById(hash);
+    if (!el || el.tagName !== 'DETAILS') return;
+    items.forEach(function(other) { if (other !== el && other.open) other.open = false; });
+    if (!el.open) el.open = true;
+    setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
   }
+
+  openByHash();
+  window.addEventListener('hashchange', openByHash);
 
   /* Accordion behavior: never more than one dropdown open at a time. When
      one opens, close any others that are currently open. */
-  var items = document.querySelectorAll('details.gk-startup-dropdown');
   items.forEach(function(d) {
     d.addEventListener('toggle', function() {
       if (!d.open) return;
       items.forEach(function(other) {
         if (other !== d && other.open) other.open = false;
       });
+    });
+  });
+
+  /* Copy-link (same UX as homepage Research Areas / Startups). */
+  document.querySelectorAll('.gk-startup-dropdown .gk-hp-anchor').forEach(function(a) {
+    a.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var href = a.getAttribute('href') || '';
+      var url = location.origin + location.pathname + href;
+      history.replaceState(null, '', href);
+      navigator.clipboard.writeText(url).then(function() {
+        var orig = a.textContent;
+        a.textContent = '✓ Copied';
+        a.style.opacity = '1';
+        setTimeout(function() { a.textContent = orig; a.style.opacity = ''; }, 1500);
+      });
+      openByHash();
     });
   });
 })();
