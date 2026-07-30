@@ -16,15 +16,24 @@ and prompts.
 
 - This repo builds Gary King's academic website (gking.harvard.edu) using
   Hugo + HugoBlox. Hugo version is pinned to `0.160.1` in
-  `.github/workflows/deploy.yml`; local builds should match.
-- All editable content lives under `EditMe/`. Anything outside `EditMe/`
-  is build infrastructure, generated output, theme code, or configuration —
-  see `EditMe/UI/PINNED-AT-ROOT.md` for the full list of pinned-at-root
-  files and why they can't move.
+  `.github/workflows/deploy.yml`; local builds should match. Prefer the
+  pinned binary at `.tools/hugo-0.160.1/hugo` when present.
+- All editable *page* content lives under `EditMe/`. PDFs and other
+  downloads live under `_site/static/files/` (see below). Anything else
+  outside `EditMe/` is build infrastructure, theme code, or configuration —
+  see `EditMe/UI/PINNED-AT-ROOT.md`.
 - **Pushing to `main` triggers a live deploy** via
   `.github/workflows/deploy.yml`. There is no staging environment.
+- Deploy currently publishes to **GitHub Pages** (source of truth for
+  gking.harvard.edu) and dual-publishes to **Cloudflare Pages** during
+  migration. Cloudflare is best-effort (`continue-on-error`); a Cloudflare
+  failure must not block the GitHub Pages deploy.
 - Build failures in CI block the deploy (the previous live site stays up),
   but they also block every subsequent push from deploying until fixed.
+- The deploy workflow cancels in-progress builds (`cancel-in-progress:
+  true`) so an older queued build cannot overwrite a newer one. If the
+  live site looks stale right after a push, wait for the newest run to
+  finish rather than assuming the commit never deployed.
 
 ---
 
@@ -45,10 +54,26 @@ any push. Surface any new commits on `origin/main`, merge them in, and
 rebuild locally before pushing.
 
 ### Rule 3: Build locally before pushing
-Run `hugo` from the repo root and confirm no errors. If you've changed
-front-matter `url:` or `aliases:` fields, also run
-`python3 _automation/scripts/build_redirects.py`. Anything beyond that
-(pagefind, first-commit dates) CI will handle.
+From the repo root, run Hugo with the same flags CI uses for content
+visibility:
+
+```bash
+.tools/hugo-0.160.1/hugo --buildFuture
+```
+
+(or plain `hugo --buildFuture` if the pinned binary isn't available).
+`--buildFuture` is required so future-dated talks and pages appear locally
+the same way they do in CI.
+
+If you've changed front-matter `url:` or `aliases:` fields, also run
+`python3 _automation/scripts/build_redirects.py` **before** any mounts
+check. CI order matters: redirects first, then
+`generate_mounts.py --check`, then Hugo, then `smoke_build.py`, then
+Pagefind.
+
+Optional local parity after Hugo: `python3 _automation/scripts/smoke_build.py`.
+Pagefind search indexing and publication first-commit dates are CI-only —
+don't expect site search to work under `hugo server`.
 
 ### Rule 4: Show the diff and confirm before pushing OR committing
 Never `git push` (or, if the auto-push hook is enabled, `git commit`)
@@ -76,7 +101,7 @@ history.
 
 ## Where editable content lives
 
-All editable content is under `EditMe/`:
+All editable *page* content is under `EditMe/`:
 
 - `EditMe/UI/` — site-wide aesthetic (CSS, per-section layouts, navigation).
   See `EditMe/UI/PINNED-AT-ROOT.md` for what *can't* move here.
@@ -101,31 +126,59 @@ All editable content is under `EditMe/`:
 - `EditMe/ResearchAreas/` — `/research-areas/`
 - `EditMe/Software/` — `/software/`, one folder per package
 - `EditMe/Dataverse/` — `/dataverse/`
-- `EditMe/Teaching/` — teaching pages
+- `EditMe/Teaching/` — teaching pages (includes `/roomsetup/`)
 - `EditMe/People/` — collaborators, students, etc.
-- `EditMe/Blog/`, `EditMe/Contact/`, `EditMe/Misc/`, `EditMe/Redirects/`
+- `EditMe/Blog/`, `EditMe/Contact/`, `EditMe/Redirects/`
+- `EditMe/Misc/` — miscellaneous pages, including:
+    - `ask-gary/` — full-page GaryAI chat
+    - `mysite/` — guide for building academic sites with this stack
+      (layouts under `layouts/mysite/`; supporting assets under
+      `_site/static/mysite/` and `_site/data/mysite_sites.yaml`)
+
+**PDFs and downloads** live outside `EditMe/`, at
+`_site/static/files/`. Front matter links them with `url: files/<name>.pdf`
+(no leading slash). Replacing a paper or talk PDF is the most common
+update in this repo: overwrite the file **in place**, keep the same
+filename, leave the front-matter `url:` unchanged, then rebuild and push.
+See "PDFs and large media" below.
 
 **Why this layout:** the EditMe/ folder is a deliberate UX choice — one
 obvious place where non-technical editors (and AI agents) can find content.
-Edits scattered outside `EditMe/` break that contract.
+Edits scattered outside `EditMe/` (except intentional PDF / static-asset
+updates) break that contract.
 
 ---
 
 ## What NOT to edit (or: edit only with care)
 
 - `public/` — Hugo build output. Never committed, never edited by hand.
-- `assets/`, `layouts/`, `themes/`, `_vendor/`, `hugo_stats.json`,
-  `go.mod`, `go.sum`, `package.json`, `package-lock.json` — pinned at
-  the repo root for tooling reasons (see `EditMe/UI/PINNED-AT-ROOT.md`).
-  Edit only when intentionally changing theme, build, or dependency
-  behavior.
+- `assets/`, `themes/`, `_vendor/`, `go.mod`, `go.sum`, `package.json`,
+  `package-lock.json` — pinned at the repo root for tooling reasons
+  (see `EditMe/UI/PINNED-AT-ROOT.md`). Edit only when intentionally
+  changing theme, build, or dependency behavior.
+- `layouts/` — also pinned; edit with care. Expected exceptions: GaryAI
+  (`layouts/chatbot/`, chat script tags in `layouts/baseof.html`),
+  search UI (`layouts/_partials/components/search-modal.html`), mysite
+  (`layouts/mysite/`), and other intentional site-chrome changes. Don't
+  churn theme defaults without a clear reason.
+- `hugo_stats.json` — regenerated by local Hugo/Tailwind runs; usually
+  noise. Don't commit it unless the change is intentional and reviewed.
+- `_scratch/` — local scratch only. Never commit.
 - `hugo.yaml`'s `module.mounts:` block — auto-generated. Run
   `_automation/scripts/generate_mounts.py` to regenerate; don't hand-edit.
+  After regenerating, run `--check` and confirm Startups / Presentations
+  mounts (and smoke tests) still pass — regen has dropped Startups mounts
+  before.
 - `.github/workflows/*.yml` — the live deploy and intake automations.
   Touch only when intentionally changing CI behavior, and surface the
   change clearly.
-- `.git/`, `node_modules/`, `resources/`, `_site/static/files/` — internals
-  and auto-managed caches.
+- `.git/`, `node_modules/`, `resources/` — internals and auto-managed
+  caches.
+
+**Do edit** `_site/static/files/` when updating PDFs or other downloads.
+Other paths under `_site/static/` (e.g. `js/`, `mysite/`, `llms.txt`,
+`openapi.json`) are also intentional site assets — change them when the
+task requires it, not casually.
 
 ---
 
@@ -136,11 +189,41 @@ Many pages have `url:` or `aliases:` set in front matter. These exist to
 preserve the original URL structure after the EditMe reorganization.
 **Don't change them without consulting `_automation/scripts/build_redirects.py`.**
 
+Legacy short URLs and redirects also feed GaryAI citations. Prefer adding
+aliases/redirects over deleting old paths; removing a redirect can break
+chatbot answer links. Content for redirects lives under
+`EditMe/Redirects/` and is generated into the build by
+`build_redirects.py`.
+
 ### Presentation clustering
 - Driven by `_automation/scripts/regroup_presentations_fuzzy.py`.
 - Always run with `--dry-run` first and review
   `EditMe/Writings/Data/presentation_clustering_report.md` before
   applying.
+
+### PDFs and large media
+- Article / slides / appendix PDFs: `_site/static/files/<name>.pdf`.
+- Replace in place when the user supplies an updated PDF; keep the
+  filename stable so existing links and buttons keep working.
+- GitHub Pages has a hard artifact-size limit. Shrink oversized PDFs and
+  images before committing when deploys fail or approach the limit.
+  Prefer **YouTube** (or similar) for long videos instead of committing
+  multi‑GB media to the repo or GitHub Releases.
+- Repo / site size over ~1 GB is a known hosting pain point (see mysite
+  troubleshooting); don't add large binaries without checking size impact.
+
+### Hugo mounts and smoke tests
+- `module.mounts` in `hugo.yaml` is generated by
+  `_automation/scripts/generate_mounts.py`. Never hand-edit that block.
+- Always prefer `generate_mounts.py --check` over blind regen-and-hope.
+- CI runs `python3 _automation/scripts/smoke_build.py` after Hugo to catch
+  missing mounts / empty sections (e.g. Startups or `/talk/` collapsing).
+  If a local build looks wrong after mount changes, run the smoke script.
+
+### Pagefind / search
+- Search uses Pagefind, built in CI with `npx pagefind --site public`.
+- Local `hugo server` does **not** build the search index. Broken local
+  search is expected; verify search on the live site after deploy.
 
 ### GaryAI chatbot
 The site has a native AI chatbot ("GaryAI") with two surfaces:
@@ -153,9 +236,14 @@ The site has a native AI chatbot ("GaryAI") with two surfaces:
   `layouts/chatbot/single.html`. Uses a custom `type: chatbot` layout
   that renders a full-page chat UI with inline HTML/CSS/JS.
 
-The backend API endpoints (AWS Lambda) are hardcoded in the widget JS
-and the chatbot layout. Don't change them unless the AWS deployment
-changes.
+The chat API currently points at **CloudFront → EC2** (e.g.
+`https://d325iygsd5krw9.cloudfront.net/api/chat` on the widget). Some
+ancillary endpoints (feedback, pixel) may still be Lambda URLs. Don't
+change API hosts unless the AWS deployment changes.
+
+Machine-readable agent docs for the public site live at `/llms.txt` and
+`/openapi.json` (`_site/static/llms.txt`, `_site/static/openapi.json`).
+Don't remove them casually.
 
 ### Startups section
 - Content: `EditMe/Startups/<slug>/index.md` — `weight` controls order,
@@ -167,6 +255,16 @@ changes.
   `EditMe/UI/PerSectionLayouts/HomePage/landing/list.html` with
   "Read more" links.
 - Config: mount, menu item (weight 45), and permalink in `hugo.yaml`.
+  After running `generate_mounts.py`, confirm Startups mounts are still
+  present.
+
+### Mysite guide
+- Page content: `EditMe/Misc/mysite/`.
+- Custom layouts: `layouts/mysite/`.
+- Assets / prompts / directory data: `_site/static/mysite/`,
+  `_site/data/mysite_sites.yaml`.
+- Linked from site chrome / Advice; treat it as a maintained product
+  surface, not a one-off Misc page.
 
 ### Google Analytics
 Tracking is loaded via
@@ -207,6 +305,19 @@ other              → button: "Article"
 conference_proceedings, miscellaneous, newspaper_article,
 unpublished, web_article, website
 ```
+
+**Common pitfall:** papers and responses must **not** use
+`presentation` — that forces a "Presentation" primary button. Use
+`journal_article`, `working_paper`, etc. for `/publication/` entries;
+reserve `presentation` for `/talk/` entries.
+
+**Secondary buttons** (also via `links` in front matter /
+`page_links.html`):
+
+- `type: pdf` — primary Article / Presentation download
+- `type: appendix` — Appendix button (supplementary PDF)
+- Cite — citation UI (built-in)
+- Other custom/secondary actions (e.g. Publisher's Version) as needed
 
 **Important:** The Writings tab placement for `/publication/` entries is
 driven by `EditMe/Writings/Data/writings_legacy_map.json`, which takes
