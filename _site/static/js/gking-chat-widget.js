@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.4.1";
+  var WIDGET_VERSION = "1.5.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -228,6 +228,36 @@
     ".input-row .send:disabled { background: #b0bfd4; cursor: not-allowed; }",
     ".input-row .send.stop { background: #b0bfd4; cursor: pointer; }",
     ".input-row .send.stop:hover { background: #9aacc4; }",
+    // Attach button. Unlike the full-page pill, .input-row has no overflow:hidden,
+    // so this drops in with no cap-radius treatment needed.
+    ".input-row .attach {",
+    "  width: 34px; height: 38px; border: none; background: transparent;",
+    "  color: #b0bfd4; cursor: pointer; flex-shrink: 0;",
+    "  display: flex; align-items: center; justify-content: center;",
+    "}",
+    ".input-row .attach:hover { color: #5876a9; }",
+    ".input-row .attach[hidden] { display: none; }",
+    // Chips sit above the input row, outside .messages — which is rebuilt
+    // wholesale every animation frame while streaming.
+    ".chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; }",
+    ".chips:empty { display: none; }",
+    ".chip {",
+    "  display: flex; align-items: center; gap: 6px;",
+    "  background: #f4f7fc; border: 1px solid #dde8f5; border-radius: 9px;",
+    "  padding: 5px 6px 5px 8px; font-size: 11px; color: #3a4a6b;",
+    "  max-width: 200px; position: relative; overflow: hidden;",
+    "}",
+    ".chip.error { border-color: #e6c3c1; background: #fdf5f5; }",
+    ".chip-icon { flex-shrink: 0; }",
+    ".chip-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }",
+    ".chip-meta { color: #7a8fb5; white-space: nowrap; font-size: 10px; }",
+    ".chip-x { background: none; border: none; cursor: pointer; color: #b0bfd4; font-size: 14px; line-height: 1; padding: 0 2px; }",
+    ".chip-x:hover { color: #c45a55; }",
+    ".chip-bar { position: absolute; left: 0; bottom: 0; height: 2px; background: #5876a9; transition: width 0.2s; }",
+    ".bubble .chips { padding: 0 0 6px; }",
+    ".bubble .chip { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.3); color: inherit; max-width: 100%; }",
+    ".bubble .chip-meta { color: inherit; opacity: 0.75; }",
+    ".panel.dragging { outline: 2px dashed #5876a9; outline-offset: -4px; }",
     ".feedback-row {",
     "  display: flex; gap: 4px; align-items: center;",
     "  margin: 4px 0 0 34px;",
@@ -495,7 +525,14 @@
     '    </button>',
     '  </div>',
     '  <div class="messages"></div>',
+    '  <div class="chips"></div>',
     '  <div class="input-row">',
+    '    <button class="attach" type="button" aria-label="Attach a file" title="Attach a file">',
+    '      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+    '        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+    '      </svg>',
+    '    </button>',
+    '    <input class="file-input" type="file" multiple hidden accept=".pdf,.csv,.xlsx,.txt,.md,.png,.jpg,.jpeg,.webp,.gif">',
     '    <textarea rows="1" placeholder=""></textarea>',
     '    <button class="send" type="button" aria-label="Send" disabled>',
     '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">',
@@ -688,6 +725,9 @@
     var messagesEl = shadow.querySelector(".messages");
     var textarea = shadow.querySelector(".input-row textarea");
     var sendBtn = shadow.querySelector(".send");
+    var attachBtn = shadow.querySelector(".attach");
+    var fileInput = shadow.querySelector(".file-input");
+    var chipsEl = shadow.querySelector(".chips");
     var generalFeedbackBtn = shadow.querySelector(".general-feedback-btn");
     var modalOverlay = shadow.querySelector(".modal-overlay");
     var modalTextarea = shadow.querySelector(".modal-textarea");
@@ -941,7 +981,11 @@
           var node = document.createElement("div");
           node.className = "msg " + (m.role === "user" ? "user" : "bot");
           if (m.role === "user") {
-            node.innerHTML = '<div class="bubble">' + escapeHtml(m.content) + "</div>";
+            // Echo attachment chips inside the sent bubble so the turn stays
+            // legible once the composer clears.
+            var uchips = m.attachmentChips && m.attachmentChips.length
+              ? '<div class="chips">' + chipsHtml(m.attachmentChips, true) + "</div>" : "";
+            node.innerHTML = '<div class="bubble">' + uchips + escapeHtml(m.content) + "</div>";
           } else {
             var visible = stripAttachTags(m.content);
             var isLastForFigs = mi === messages.length - 1;
@@ -1056,7 +1100,11 @@
         sendBtn.setAttribute("aria-label", "Stop");
         sendBtn.classList.add("stop");
       } else {
-        sendBtn.disabled = !textarea.value.trim();
+        // A ready attachment alone is enough to send; an in-flight upload blocks
+        // sending so a file can't be half-attached to a turn.
+        var hasReady = typeof readyAttachments === "function" && readyAttachments().length > 0;
+        var busyUploading = typeof anyUploading === "function" && anyUploading();
+        sendBtn.disabled = (!textarea.value.trim() && !hasReady) || busyUploading;
         sendBtn.innerHTML = SEND_ICON_SVG;
         sendBtn.setAttribute("aria-label", "Send");
         sendBtn.classList.remove("stop");
@@ -1107,12 +1155,187 @@
       streamMsgIdx = -1;
     }
 
+    // ── File attachments ─────────────────────────────────────────────────────
+    // Mirrors the full-page implementation in layouts/chatbot/single.html. Kept
+    // duplicated rather than shared because the two UIs share no code at all and
+    // the class conventions differ (shadow-DOM bare classes vs gk- prefixed IDs).
+    // NOTE: below 600px the full-page chat is display:none and the widget is
+    // force-opened fullscreen, so THIS is the mobile upload path.
+
+    var UPLOAD_URL_EP = String(config.apiUrl).replace(/\/api\/chat$/, "/api/upload-url");
+    var UPLOAD_PREP_EP = String(config.apiUrl).replace(/\/api\/chat$/, "/api/upload-prepare");
+    var pending = [];
+
+    function anyUploading() {
+      return pending.some(function (p) { return p.status === "uploading" || p.status === "preparing"; });
+    }
+    function readyAttachments() {
+      return pending.filter(function (p) { return p.status === "ready"; })
+                    .map(function (p) { return p.prepared; });
+    }
+    function fmtBytes(n) {
+      if (!n && n !== 0) return "";
+      if (n < 1024) return n + " B";
+      if (n < 1048576) return Math.round(n / 1024) + " KB";
+      return (n / 1048576).toFixed(1) + " MB";
+    }
+    function chipIcon(kind) {
+      if (kind === "image") return "🖼";
+      if (kind === "tabular") return "📊";
+      return "📄";
+    }
+    function chipMeta(p) {
+      if (p.status === "uploading") return "uploading " + (p.pct || 0) + "%";
+      if (p.status === "preparing") return "reading…";
+      if (p.status === "error") return p.error || "failed";
+      var d = p.prepared || {};
+      if (d.pages) return d.pages + (d.pages === 1 ? " page" : " pages");
+      return fmtBytes(p.size);
+    }
+    function chipsHtml(items, readonly) {
+      return items.map(function (p) {
+        var cls = "chip" + (p.status === "error" ? " error" : "");
+        var bar = p.status === "uploading"
+          ? '<div class="chip-bar" style="width:' + (p.pct || 0) + '%"></div>' : "";
+        var x = readonly ? ""
+          : '<button class="chip-x" type="button" data-chip="' + escapeHtml(p.id) + '" aria-label="Remove">&times;</button>';
+        return '<div class="' + cls + '">' +
+          '<span class="chip-icon">' + chipIcon(p.kind) + "</span>" +
+          '<span class="chip-name">' + escapeHtml(p.name) + "</span>" +
+          '<span class="chip-meta">' + escapeHtml(chipMeta(p)) + "</span>" + x + bar + "</div>";
+      }).join("");
+    }
+    function renderChips() {
+      chipsEl.innerHTML = chipsHtml(pending, false);
+      updateSendState();
+    }
+    chipsEl.addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest(".chip-x");
+      if (!btn) return;
+      var id = btn.getAttribute("data-chip");
+      var p = pending.filter(function (x) { return x.id === id; })[0];
+      if (p && p.xhr) { try { p.xhr.abort(); } catch (err) {} }
+      pending = pending.filter(function (x) { return x.id !== id; });
+      renderChips();
+    });
+
+    // XHR, not fetch: fetch has no upload-progress event.
+    function putWithProgress(p, url, file, contentType, onPct) {
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        p.xhr = xhr;
+        xhr.open("PUT", url, true);
+        xhr.setRequestHeader("Content-Type", contentType);
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable) onPct(Math.round((ev.loaded / ev.total) * 100));
+        };
+        xhr.onload = function () {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error("upload failed (" + xhr.status + ")"));
+        };
+        xhr.onerror = function () { reject(new Error("network error during upload")); };
+        xhr.onabort = function () { reject(new Error("aborted")); };
+        xhr.send(file);
+      });
+    }
+
+    async function startUpload(file) {
+      var p = { id: uuid(), name: file.name, size: file.size, kind: "text", status: "uploading", pct: 0 };
+      pending.push(p);
+      renderChips();
+      try {
+        var r = await fetch(UPLOAD_URL_EP, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation_id: ensureConversationId(), filename: file.name })
+        });
+        if (r.status === 403) {
+          // Kill switch is on — stop offering uploads rather than failing repeatedly.
+          attachBtn.hidden = true;
+          pending = pending.filter(function (x) { return x.id !== p.id; });
+          renderChips();
+          return;
+        }
+        var meta = await r.json();
+        if (!r.ok) throw new Error(meta.message || "not supported");
+        p.kind = meta.kind;
+        renderChips();
+
+        await putWithProgress(p, meta.url, file, meta.media_type, function (pct) {
+          p.pct = pct; renderChips();
+        });
+
+        p.status = "preparing"; renderChips();
+        var pr = await fetch(UPLOAD_PREP_EP, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation_id: ensureConversationId(), key: meta.key })
+        });
+        var prep = await pr.json();
+        if (!pr.ok) throw new Error(prep.message || "could not read the file");
+        p.prepared = {
+          key: prep.key, file_id: prep.file_id, filename: prep.filename,
+          kind: prep.kind, media_type: prep.media_type,
+          pages: prep.pages, chars: prep.chars, indexed: prep.indexed
+        };
+        p.status = "ready";
+      } catch (err) {
+        p.status = "error";
+        p.error = err && err.message ? err.message.slice(0, 60) : "failed";
+      }
+      renderChips();
+    }
+
+    function attachFiles(list) {
+      for (var i = 0; i < list.length; i++) startUpload(list[i]);
+    }
+
+    attachBtn.addEventListener("click", function () { fileInput.click(); });
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files && fileInput.files.length) attachFiles(fileInput.files);
+      fileInput.value = "";
+    });
+    ["dragenter", "dragover"].forEach(function (ev) {
+      panel.addEventListener(ev, function (e) {
+        if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") === -1) return;
+        e.preventDefault(); panel.classList.add("dragging");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      panel.addEventListener(ev, function (e) {
+        if (ev === "dragleave" && e.relatedTarget && panel.contains(e.relatedTarget)) return;
+        panel.classList.remove("dragging");
+      });
+    });
+    panel.addEventListener("drop", function (e) {
+      if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+      e.preventDefault();
+      attachFiles(e.dataTransfer.files);
+    });
+    textarea.addEventListener("paste", function (e) {
+      if (!e.clipboardData || !e.clipboardData.files || !e.clipboardData.files.length) return;
+      attachFiles(e.clipboardData.files);
+    });
+
     async function send() {
       var text = textarea.value.trim();
-      if (!text || loading) return;
+      var atts = readyAttachments();
+      if ((!text && !atts.length) || loading || anyUploading()) return;
+      if (!text && atts.length) text = "Please take a look at this.";
       textarea.value = "";
       ensureConversationId();
-      messages.push({ id: uuid(), role: "user", content: text });
+      var userMsg = { id: uuid(), role: "user", content: text };
+      if (atts.length) {
+        userMsg.attachments = atts;
+        // Display copy — `attachments` is the wire format sent to the backend
+        // verbatim, so nothing UI-only may be added to it.
+        userMsg.attachmentChips = pending
+          .filter(function (p) { return p.status === "ready"; })
+          .map(function (p) {
+            return { id: p.id, name: p.name, kind: p.kind, size: p.size, status: "ready", prepared: p.prepared };
+          });
+        pending = [];
+        renderChips();
+      }
+      messages.push(userMsg);
       setLoading(true);
 
       abortController = new AbortController();

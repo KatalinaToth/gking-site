@@ -54,6 +54,34 @@ Errors: malformed JSON-mode requests get HTTP 400 `{"error": "..."}`;
 mid-generation failures arrive in-band as `{"error": "..."}` (JSON mode) or an
 SSE `{"type":"error"}` event.
 
+File attachments (PDF, CSV/XLSX, TXT/MD, images) — optional, two steps before
+the chat call. Files are kept for 24 hours and are never added to the corpus.
+Not available on the lambda endpoint or via MCP; use the CloudFront host above.
+
+  1. POST /api/upload-url  {"conversation_id": "...", "filename": "paper.pdf"}
+     → {"url": "<presigned S3 PUT>", "key": "...", "kind": "pdf",
+        "media_type": "application/pdf", "filename": "paper.pdf"}
+     PUT the raw bytes to `url` with that Content-Type. HTTP 403 here means
+     uploads are currently disabled — degrade gracefully.
+
+  2. POST /api/upload-prepare  {"conversation_id": "...", "key": "<from step 1>"}
+     → {"file_id": "...", "kind": "pdf", "pages": 38, "chars": 56294,
+        "indexed": false, "warnings": []}
+     `indexed: true` means the document was too long to read whole and will be
+     searched instead of read end to end.
+
+Then attach the step-2 object to the user message as `attachments` (an array;
+attached files stay available on later turns of the same conversation):
+
+    {"messages": [
+       {"role": "user", "content": "Review this paper.",
+        "attachments": [{"key": "...", "file_id": "...", "filename": "paper.pdf",
+                         "kind": "pdf", "media_type": "application/pdf",
+                         "pages": 38, "chars": 56294, "indexed": false}]}]}
+
+A turn carrying attachments answers from the file AND from Gary's corpus.
+Turns without `attachments` behave exactly as before.
+
 MCP (Model Context Protocol): stateless Streamable-HTTP server at
 
     https://d325iygsd5krw9.cloudfront.net/api/mcp

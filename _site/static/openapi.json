@@ -5,7 +5,11 @@
     "version": "1.0.0",
     "description": "Programmatic access to GaryAI, Gary King's AI avatar (gking.harvard.edu/ask-gary). Answers questions about Gary King's research, quantitative social-science methods, software, teaching, and academic-career advice, citing sources on gking.harvard.edu. No authentication. An automated topic screener refuses unrelated questions. The server is stateless: resend full conversation history each turn. Human-readable docs: https://gking.harvard.edu/llms.txt. An MCP (Model Context Protocol) server exposing the same capability as the ask_gary tool lives at https://d325iygsd5krw9.cloudfront.net/api/mcp"
   },
-  "servers": [{ "url": "https://d325iygsd5krw9.cloudfront.net" }],
+  "servers": [
+    {
+      "url": "https://d325iygsd5krw9.cloudfront.net"
+    }
+  ],
   "paths": {
     "/api/chat": {
       "post": {
@@ -15,11 +19,16 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ChatRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              },
               "examples": {
                 "oneShot": {
                   "summary": "One-shot question (single JSON response)",
-                  "value": { "question": "How should I analyze a large biographical dataset?", "source": "my-agent" }
+                  "value": {
+                    "question": "How should I analyze a large biographical dataset?",
+                    "source": "my-agent"
+                  }
                 },
                 "followUp": {
                   "summary": "Follow-up turn with history",
@@ -29,9 +38,18 @@
                     "source": "my-agent",
                     "last_cited_asset_id": 123,
                     "messages": [
-                      { "role": "user", "content": "first question" },
-                      { "role": "assistant", "content": "prior reply" },
-                      { "role": "user", "content": "follow-up question" }
+                      {
+                        "role": "user",
+                        "content": "first question"
+                      },
+                      {
+                        "role": "assistant",
+                        "content": "prior reply"
+                      },
+                      {
+                        "role": "user",
+                        "content": "follow-up question"
+                      }
                     ]
                   }
                 }
@@ -41,11 +59,18 @@
         },
         "responses": {
           "200": {
-            "description": "With stream:false (or the question shorthand): a single JSON object, possibly preceded by keep-alive whitespace, which JSON parsers ignore. Without stream:false: Server-Sent Events (text/event-stream) of {type: token|attached_figures|previews|done|error} objects — the mode the website UI uses.",
+            "description": "With stream:false (or the question shorthand): a single JSON object, possibly preceded by keep-alive whitespace, which JSON parsers ignore. Without stream:false: Server-Sent Events (text/event-stream) of {type: token|attached_figures|previews|done|error} objects \u2014 the mode the website UI uses.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ChatReply" } },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatReply"
+                }
+              },
               "text/event-stream": {
-                "schema": { "type": "string", "description": "SSE stream: data: {\"type\":\"token\",\"content\":\"...\"} events, then optional attached_figures / previews events, ending with {\"type\":\"done\",\"last_cited_asset_id\":...}" }
+                "schema": {
+                  "type": "string",
+                  "description": "SSE stream: data: {\"type\":\"token\",\"content\":\"...\"} events, then optional attached_figures / previews events, ending with {\"type\":\"done\",\"last_cited_asset_id\":...}"
+                }
               }
             }
           },
@@ -53,9 +78,84 @@
             "description": "Malformed request (JSON mode only; SSE mode reports errors as an in-stream event).",
             "content": {
               "application/json": {
-                "schema": { "type": "object", "properties": { "error": { "type": "string" } } }
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/upload-url": {
+      "post": {
+        "summary": "Get a presigned URL to upload a file",
+        "description": "Step 1 of 2. PUT the raw bytes to the returned url with the returned media_type, then call /api/upload-prepare. 403 means uploads are disabled.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadUrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported file type"
+          },
+          "403": {
+            "description": "Uploads are currently disabled"
+          }
+        }
+      }
+    },
+    "/api/upload-prepare": {
+      "post": {
+        "summary": "Prepare an uploaded file for use in chat",
+        "description": "Step 2 of 2. Returns the attachment object to place in a user message's `attachments` array. Files are retained 24 hours and never added to the corpus.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadPrepareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prepared attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad key or unsupported type"
+          },
+          "500": {
+            "description": "The file could not be processed"
           }
         }
       }
@@ -67,57 +167,248 @@
         "type": "object",
         "description": "Provide either `question` (one-shot shorthand; implies stream:false) or `messages` (full history, required for follow-ups).",
         "properties": {
-          "question": { "type": "string", "description": "One-shot question. Shorthand for a single-turn messages array; implies stream:false unless stream is explicitly true." },
+          "question": {
+            "type": "string",
+            "description": "One-shot question. Shorthand for a single-turn messages array; implies stream:false unless stream is explicitly true."
+          },
           "messages": {
             "type": "array",
             "description": "Full conversation history, oldest first. Required when question is absent.",
-            "items": { "$ref": "#/components/schemas/Message" }
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
           },
-          "stream": { "type": "boolean", "description": "false → single JSON response. Omitted/true → SSE stream." },
-          "conversation_id": { "type": "string", "description": "Stable id for grouping turns in server logs. Generated and returned if omitted in JSON mode." },
-          "source": { "type": "string", "description": "Identify your agent/app (please set — helps the maintainers attribute traffic)." },
-          "last_cited_asset_id": { "type": ["integer", "null"], "description": "Echo the value from the previous turn's response so references like \"that paper\" resolve." },
-          "botId": { "type": "string", "description": "Optional; the website widget sends \"gking\"." }
+          "stream": {
+            "type": "boolean",
+            "description": "false \u2192 single JSON response. Omitted/true \u2192 SSE stream."
+          },
+          "conversation_id": {
+            "type": "string",
+            "description": "Stable id for grouping turns in server logs. Generated and returned if omitted in JSON mode."
+          },
+          "source": {
+            "type": "string",
+            "description": "Identify your agent/app (please set \u2014 helps the maintainers attribute traffic)."
+          },
+          "last_cited_asset_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Echo the value from the previous turn's response so references like \"that paper\" resolve."
+          },
+          "botId": {
+            "type": "string",
+            "description": "Optional; the website widget sends \"gking\"."
+          }
         }
       },
       "Message": {
         "type": "object",
-        "required": ["role", "content"],
+        "required": [
+          "role",
+          "content"
+        ],
         "properties": {
-          "role": { "type": "string", "enum": ["user", "assistant"] },
-          "content": { "type": "string" }
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Optional files attached to this user turn. Each item is the object returned by POST /api/upload-prepare. Files remain available on later turns of the same conversation. Omit entirely for normal chat.",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          }
         }
       },
       "ChatReply": {
         "type": "object",
         "properties": {
-          "reply": { "type": "string", "description": "Markdown answer with source links." },
-          "figures": { "type": "array", "items": { "$ref": "#/components/schemas/Figure" } },
-          "previews": { "type": "array", "items": { "$ref": "#/components/schemas/Preview" } },
-          "last_cited_asset_id": { "type": ["integer", "null"], "description": "Send back on the next turn." },
-          "conversation_id": { "type": "string" },
-          "model": { "type": "string" },
-          "latency_ms": { "type": "integer" },
-          "error": { "type": "string", "description": "Present instead of reply when generation failed." }
+          "reply": {
+            "type": "string",
+            "description": "Markdown answer with source links."
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Figure"
+            }
+          },
+          "previews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Preview"
+            }
+          },
+          "last_cited_asset_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Send back on the next turn."
+          },
+          "conversation_id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "error": {
+            "type": "string",
+            "description": "Present instead of reply when generation failed."
+          }
         }
       },
       "Figure": {
         "type": "object",
         "properties": {
-          "handle": { "type": "string" },
-          "url": { "type": "string" },
-          "caption": { "type": "string" },
-          "source_title": { "type": "string" }
+          "handle": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "source_title": {
+            "type": "string"
+          }
         }
       },
       "Preview": {
         "type": "object",
         "properties": {
-          "url": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "image": { "type": "string" },
-          "site_name": { "type": "string" }
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "site_name": {
+            "type": "string"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "description": "A prepared file attachment, as returned by POST /api/upload-prepare.",
+        "required": [
+          "key",
+          "file_id",
+          "filename",
+          "kind",
+          "media_type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Storage key from POST /api/upload-url."
+          },
+          "file_id": {
+            "type": "string",
+            "description": "Anthropic Files API id."
+          },
+          "filename": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "image",
+              "tabular",
+              "text"
+            ]
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "pages": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "PDF page count."
+          },
+          "chars": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "indexed": {
+            "type": "boolean",
+            "description": "True when the document was too long to read whole and is searched instead."
+          }
+        }
+      },
+      "UploadUrlRequest": {
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "filename"
+        ],
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadUrlResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Presigned S3 PUT URL, valid 15 minutes."
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadPrepareRequest": {
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "key"
+        ],
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          }
         }
       }
     }

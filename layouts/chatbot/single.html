@@ -293,6 +293,56 @@
   .gk-input-row .gk-send.stop { color: #c45a55; cursor: pointer; }
   .gk-input-row .gk-send.stop:hover { color: #a23a35; }
 
+  /* Attach button. The row has overflow:hidden, so this needs its own left cap
+     radius, mirroring how .gk-send caps the right. */
+  .gk-input-row .gk-attach {
+    background: transparent; border: none; padding: 0 4px 0 14px;
+    color: #b0bfd4; cursor: pointer; height: 46px;
+    display: flex; align-items: center;
+    border-radius: 26px 0 0 26px; transition: color 0.2s;
+    flex-shrink: 0;
+  }
+  .gk-input-row .gk-attach:hover { color: #5876a9; }
+  .gk-input-row .gk-attach:disabled { cursor: default; opacity: 0.45; }
+  .gk-input-row .gk-attach svg { width: 18px; height: 18px; display: block; }
+
+  /* Chips live in .gk-input-area, ABOVE the pill — deliberately outside
+     renderMessages(), which destroys and rebuilds its subtree every animation
+     frame while streaming and would wipe upload state mid-flight. */
+  .gk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .gk-chips:empty { display: none; }
+  .gk-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: #f4f7fc; border: 1px solid #dde8f5; border-radius: 10px;
+    padding: 6px 8px 6px 10px; font-size: 12px; color: #3a4a6b;
+    max-width: 260px; position: relative; overflow: hidden;
+  }
+  .gk-chip.error { border-color: #e6c3c1; background: #fdf5f5; }
+  .gk-chip-icon { flex-shrink: 0; color: #7a8fb5; font-size: 13px; }
+  .gk-chip-name {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;
+  }
+  .gk-chip-meta { color: #7a8fb5; white-space: nowrap; font-size: 11px; }
+  .gk-chip-x {
+    background: none; border: none; cursor: pointer; color: #b0bfd4;
+    font-size: 15px; line-height: 1; padding: 0 2px;
+  }
+  .gk-chip-x:hover { color: #c45a55; }
+  .gk-chip-bar {
+    position: absolute; left: 0; bottom: 0; height: 2px;
+    background: #5876a9; transition: width 0.2s;
+  }
+  /* Chips echoed back inside a sent user bubble — no remove button, muted. */
+  .gk-bubble .gk-chips { margin: 0 0 6px; }
+  .gk-bubble .gk-chip {
+    background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.3);
+    color: inherit; max-width: 100%;
+  }
+  .gk-bubble .gk-chip-icon, .gk-bubble .gk-chip-meta { color: inherit; opacity: 0.75; }
+
+  /* Drag-and-drop target is the whole chat surface. */
+  .gk-chat.gk-dragging { outline: 2px dashed #5876a9; outline-offset: -6px; }
+
   .gk-footer {
     flex-shrink: 0; padding: 6px 16px 12px;
     text-align: center;
@@ -368,7 +418,15 @@
   <div class="gk-chat-messages" id="gk-messages"></div>
 
   <div class="gk-input-area">
+    <div class="gk-chips" id="gk-chips"></div>
     <div class="gk-input-row">
+      <button id="gk-attach" class="gk-attach" type="button" title="Attach a file" aria-label="Attach a file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </button>
+      <input id="gk-file" type="file" multiple hidden
+             accept=".pdf,.csv,.xlsx,.txt,.md,.png,.jpg,.jpeg,.webp,.gif">
       <textarea id="gk-input" rows="1" placeholder="This is Gary King's AI chatbot. How can I help?"></textarea>
       <button id="gk-send" class="gk-send" type="button" disabled>Send &rarr;</button>
     </div>
@@ -653,7 +711,11 @@
         var node = document.createElement("div");
         node.className = "gk-msg " + (m.role === "user" ? "user" : "bot");
         if (m.role === "user") {
-          node.innerHTML = '<div class="gk-bubble">' + esc(m.content) + '</div>';
+          // Echo the attachment chips inside the sent bubble so the turn stays
+          // legible after the composer clears.
+          var chips = (m.attachmentChips && m.attachmentChips.length)
+            ? '<div class="gk-chips">' + chipsHtml(m.attachmentChips, true) + '</div>' : "";
+          node.innerHTML = '<div class="gk-bubble">' + chips + esc(m.content) + '</div>';
         } else {
           var vis = stripAttach(m.content);
           var isLast = mi === messages.length - 1;
@@ -718,7 +780,11 @@
       sendBtn.innerHTML = "Stop";
       sendBtn.classList.add("stop");
     } else {
-      sendBtn.disabled = !textarea.value.trim();
+      // A ready attachment is enough to send on its own; an in-flight upload
+      // blocks sending so a file can't be half-attached to a turn.
+      var hasReady = typeof readyAttachments === "function" && readyAttachments().length > 0;
+      var busyUploading = typeof anyUploading === "function" && anyUploading();
+      sendBtn.disabled = (!textarea.value.trim() && !hasReady) || busyUploading;
       sendBtn.innerHTML = "Send &rarr;";
       sendBtn.classList.remove("stop");
     }
@@ -768,13 +834,197 @@
     streamMsgIdx = -1;
   }
 
+  // ── File attachments ───────────────────────────────────────────────────────
+  // Bytes go browser -> S3 directly via a presigned PUT; only a small descriptor
+  // travels with the chat request. Chips live in the input area, outside
+  // renderMessages(), which rebuilds its subtree every frame while streaming.
+
+  var UPLOAD_URL_EP = API_URL.replace(/\/api\/chat$/, "/api/upload-url");
+  var UPLOAD_PREP_EP = API_URL.replace(/\/api\/chat$/, "/api/upload-prepare");
+  var attachBtn = document.getElementById("gk-attach");
+  var fileInput = document.getElementById("gk-file");
+  var chipsEl = document.getElementById("gk-chips");
+  var pending = [];
+
+  function anyUploading() {
+    return pending.some(function(p) { return p.status === "uploading" || p.status === "preparing"; });
+  }
+  function readyAttachments() {
+    return pending.filter(function(p) { return p.status === "ready"; })
+                  .map(function(p) { return p.prepared; });
+  }
+  function fmtBytes(n) {
+    if (!n && n !== 0) return "";
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return Math.round(n / 1024) + " KB";
+    return (n / 1048576).toFixed(1) + " MB";
+  }
+  function chipIcon(kind) {
+    if (kind === "image") return "&#128443;";
+    if (kind === "tabular") return "&#128202;";
+    return "&#128196;";
+  }
+  function chipMeta(p) {
+    if (p.status === "uploading") return "uploading " + (p.pct || 0) + "%";
+    if (p.status === "preparing") return "reading…";
+    if (p.status === "error") return p.error || "failed";
+    var d = p.prepared || {};
+    if (d.pages) return d.pages + (d.pages === 1 ? " page" : " pages");
+    return fmtBytes(p.size);
+  }
+  // Shared by the composer chips and the echo inside a sent user bubble.
+  function chipsHtml(items, readonly) {
+    return items.map(function(p) {
+      var cls = "gk-chip" + (p.status === "error" ? " error" : "");
+      var bar = (p.status === "uploading")
+        ? '<div class="gk-chip-bar" style="width:' + (p.pct || 0) + '%"></div>' : "";
+      var x = readonly ? ""
+        : '<button class="gk-chip-x" type="button" data-chip="' + esc(p.id) + '" aria-label="Remove">&times;</button>';
+      return '<div class="' + cls + '">' +
+        '<span class="gk-chip-icon">' + chipIcon(p.kind) + '</span>' +
+        '<span class="gk-chip-name">' + esc(p.name) + '</span>' +
+        '<span class="gk-chip-meta">' + esc(chipMeta(p)) + '</span>' + x + bar + '</div>';
+    }).join("");
+  }
+  function renderChips() {
+    chipsEl.innerHTML = chipsHtml(pending, false);
+    updateSendState();
+  }
+  chipsEl.addEventListener("click", function(e) {
+    var btn = e.target.closest && e.target.closest(".gk-chip-x");
+    if (!btn) return;
+    var id = btn.getAttribute("data-chip");
+    var p = pending.filter(function(x) { return x.id === id; })[0];
+    if (p && p.xhr) { try { p.xhr.abort(); } catch (err) {} }
+    pending = pending.filter(function(x) { return x.id !== id; });
+    renderChips();
+  });
+
+  // XHR rather than fetch: fetch still has no upload-progress event, and a large
+  // PDF with no progress bar reads as a hung page. `p` is the pending record —
+  // the xhr is stored on it so the chip's remove button can abort mid-flight.
+  function putWithProgress(p, url, file, contentType, onPct) {
+    return new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      p.xhr = xhr;
+      xhr.open("PUT", url, true);
+      xhr.setRequestHeader("Content-Type", contentType);
+      xhr.upload.onprogress = function(ev) {
+        if (ev.lengthComputable) onPct(Math.round((ev.loaded / ev.total) * 100));
+      };
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error("upload failed (" + xhr.status + ")"));
+      };
+      xhr.onerror = function() { reject(new Error("network error during upload")); };
+      xhr.onabort = function() { reject(new Error("aborted")); };
+      xhr.send(file);
+    });
+  }
+
+  async function startUpload(file) {
+    var p = {
+      id: uuid(), name: file.name, size: file.size,
+      kind: "text", status: "uploading", pct: 0
+    };
+    pending.push(p);
+    renderChips();
+    try {
+      var r = await fetch(UPLOAD_URL_EP, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation_id: ensureConversationId(), filename: file.name })
+      });
+      if (r.status === 403) {
+        // Kill switch is on — stop offering uploads at all rather than letting
+        // every subsequent attempt fail the same way.
+        attachBtn.hidden = true;
+        pending = pending.filter(function(x) { return x.id !== p.id; });
+        renderChips();
+        return;
+      }
+      var meta = await r.json();
+      if (!r.ok) throw new Error(meta.message || "not supported");
+      p.kind = meta.kind;
+      renderChips();
+
+      await putWithProgress(p, meta.url, file, meta.media_type, function(pct) {
+        p.pct = pct; renderChips();
+      });
+
+      p.status = "preparing"; renderChips();
+      var pr = await fetch(UPLOAD_PREP_EP, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation_id: ensureConversationId(), key: meta.key })
+      });
+      var prep = await pr.json();
+      if (!pr.ok) throw new Error(prep.message || "could not read the file");
+      p.prepared = {
+        key: prep.key, file_id: prep.file_id, filename: prep.filename,
+        kind: prep.kind, media_type: prep.media_type,
+        pages: prep.pages, chars: prep.chars, indexed: prep.indexed
+      };
+      p.warnings = prep.warnings || [];
+      p.status = "ready";
+    } catch (err) {
+      p.status = "error";
+      p.error = (err && err.message) ? err.message.slice(0, 60) : "failed";
+    }
+    renderChips();
+  }
+
+  function attachFiles(list) {
+    for (var i = 0; i < list.length; i++) startUpload(list[i]);
+  }
+
+  attachBtn.addEventListener("click", function() { fileInput.click(); });
+  fileInput.addEventListener("change", function() {
+    if (fileInput.files && fileInput.files.length) attachFiles(fileInput.files);
+    fileInput.value = "";
+  });
+  // Drag-and-drop over the whole chat surface.
+  ["dragenter", "dragover"].forEach(function(ev) {
+    chatEl.addEventListener(ev, function(e) {
+      if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") === -1) return;
+      e.preventDefault(); chatEl.classList.add("gk-dragging");
+    });
+  });
+  ["dragleave", "drop"].forEach(function(ev) {
+    chatEl.addEventListener(ev, function(e) {
+      if (ev === "dragleave" && e.relatedTarget && chatEl.contains(e.relatedTarget)) return;
+      chatEl.classList.remove("gk-dragging");
+    });
+  });
+  chatEl.addEventListener("drop", function(e) {
+    if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    attachFiles(e.dataTransfer.files);
+  });
+  // Paste an image straight from the clipboard (screenshots of tables/figures).
+  textarea.addEventListener("paste", function(e) {
+    if (!e.clipboardData || !e.clipboardData.files || !e.clipboardData.files.length) return;
+    attachFiles(e.clipboardData.files);
+  });
+
   async function send() {
     var text = textarea.value.trim();
-    if (!text || loading) return;
+    var atts = readyAttachments();
+    // An attachment alone is a valid turn — "here, look at this".
+    if ((!text && !atts.length) || loading || anyUploading()) return;
+    if (!text && atts.length) text = "Please take a look at this.";
     textarea.value = "";
     textarea.style.height = "auto";
     ensureConversationId();
-    messages.push({ id: uuid(), role: "user", content: text });
+    var userMsg = { id: uuid(), role: "user", content: text };
+    if (atts.length) {
+      userMsg.attachments = atts;
+      // Keep a display copy: `attachments` is the wire format and is serialized
+      // to the backend as-is, so nothing UI-only may be added to it.
+      userMsg.attachmentChips = pending.filter(function(p) { return p.status === "ready"; })
+        .map(function(p) { return { id: p.id, name: p.name, kind: p.kind, size: p.size, status: "ready", prepared: p.prepared }; });
+      pending = [];
+      renderChips();
+    }
+    messages.push(userMsg);
     setLoading(true);
 
     abortController = new AbortController();
