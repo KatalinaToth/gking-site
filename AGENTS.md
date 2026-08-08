@@ -24,10 +24,11 @@ and prompts.
   see `EditMe/UI/PINNED-AT-ROOT.md`.
 - **Pushing to `main` triggers a live deploy** via
   `.github/workflows/deploy.yml`. There is no staging environment.
-- Deploy currently publishes to **GitHub Pages** (source of truth for
-  gking.harvard.edu) and dual-publishes to **Cloudflare Pages** during
-  migration. Cloudflare is best-effort (`continue-on-error`); a Cloudflare
-  failure must not block the GitHub Pages deploy.
+- **Live host is Cloudflare Pages** project `gking-7bw`
+  (`gking.harvard.edu` → `gking-7bw.pages.dev`). The workflow also uploads
+  a GitHub Pages artifact, but the custom domain does not point at GitHub
+  Pages anymore — a green GH Pages deploy alone does **not** update what
+  visitors see. Cloudflare deploy must succeed.
 - Build failures in CI block the deploy (the previous live site stays up),
   but they also block every subsequent push from deploying until fixed.
 - The deploy workflow cancels in-progress builds (`cancel-in-progress:

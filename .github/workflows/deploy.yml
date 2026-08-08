@@ -93,18 +93,17 @@ jobs:
         with:
           path: ./public
 
-      # Dual-publish to Cloudflare Pages during the GitHub Pages -> Cloudflare
-      # migration. GitHub Pages remains the source of truth for gking.harvard.edu
-      # until DNS is cut over, so this step is best-effort: continue-on-error
-      # ensures a Cloudflare hiccup can never block the GitHub Pages deploy
-      # below. Deploys to the `main` branch = the production URL on Cloudflare.
-      - name: Publish to Cloudflare Pages (parallel host during migration)
-        continue-on-error: true
+      # Live site: gking.harvard.edu CNAMEs to gking-7bw.pages.dev (Cloudflare
+      # Pages). GitHub Pages still receives an artifact (and redirects to the
+      # custom domain), but visitors hit Cloudflare. Deploying to the wrong
+      # project name (e.g. `gking` → gking.pages.dev, currently 522) leaves
+      # the live site stale even when this workflow reports success.
+      - name: Publish to Cloudflare Pages (live host)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy public --project-name=gking --branch=main
+          command: pages deploy public --project-name=gking-7bw --branch=main
 
   deploy:
     environment:
