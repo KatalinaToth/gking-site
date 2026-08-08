@@ -37,7 +37,11 @@
         {{ end }}
       {{ end }}
     </div>
-    <main id="main-content" tabindex="-1" class="page-body {{if ne .Type "landing"}} my-10{{end}}">
+    {{/* data-pagefind-body: only index page content, not chrome (navbar,
+         Harvard banner, search modal "Powered by Hugo Blox", footer, chat).
+         Without this, Pagefind excerpts prepend theme branding and make it
+         look like "Hugo Blox" is an author. */}}
+    <main id="main-content" tabindex="-1" class="page-body {{if ne .Type "landing"}} my-10{{end}}" data-pagefind-body>
       {{ block "main" . }}{{ end }}
     </main>
     <div class="page-footer">

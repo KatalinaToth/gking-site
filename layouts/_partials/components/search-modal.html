@@ -1,5 +1,7 @@
-{{/* Modern Search Modal - Custom Pagefind API Implementation */}}
+{{/* Modern Search Modal - Custom Pagefind API Implementation.
+     data-pagefind-ignore: never index this chrome (incl. "Powered by Hugo Blox"). */}}
 <div
+  data-pagefind-ignore
   x-data="searchModal()"
   x-show="$store.search.open"
   @keydown.escape.window="$store.search.open = false"
@@ -243,12 +245,8 @@
               <span x-text="availableFilters.length + ' filters'"></span>
             </span>
           </div>
-          <a href="https://hugoblox.com" target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-            <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            Powered by Hugo Blox
-          </a>
+          {{/* Intentionally no "Powered by Hugo Blox" here — it was being
+               indexed into Pagefind excerpts and read as an author name. */}}
         </div>
       </div>
       
