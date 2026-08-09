@@ -477,17 +477,36 @@
   </div>
 </div>
 
+<script src="/js/gk-track.js"></script>
 <script>
 (function() {
   var API_URL = "https://d325iygsd5krw9.cloudfront.net/api/chat";
   var FEEDBACK_URL = "https://4jk1rwjz4a.execute-api.us-east-2.amazonaws.com/feedback";
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
-  try {
-    var pu = encodeURIComponent(location.host + location.pathname);
-    var pr = encodeURIComponent(document.referrer || "");
-    var puid = (new URLSearchParams(location.search).get("uid") || "").slice(0, 100);
-    new Image().src = PIXEL_URL + "?t=gary&u=" + pu + "&r=" + pr + (puid ? "&uid=" + encodeURIComponent(puid) : "") + "&_=" + Date.now();
-  } catch (e) {}
+
+  /* Analytics. gk-track.js writes nothing to the device (see its header): the
+     visitor id is derived server-side from a rotating salt, so there is no
+     consent gate here. If the script fails to load, T degrades to a no-op and
+     the raw page-view pixel still fires, so the baseline visit count survives. */
+  var TRACKED = !!window.GKTrack;
+  var T = TRACKED
+    ? window.GKTrack.init({ endpoint: PIXEL_URL, surface: "fullpage" })
+    : { track: function() {}, trackOnce: function() {}, setConversationId: function() {},
+        noteMessageSent: function() {}, noteAnswerReceived: function() {},
+        bindComposer: function() {}, bindAnswerLinks: function() {},
+        trackAnswerDwell: function() {}, flush: function() {},
+        clientContext: function() { return undefined; } };
+
+  if (TRACKED) {
+    T.track("page_view", {});
+  } else {
+    try {
+      var pu = encodeURIComponent(location.host + location.pathname);
+      var pr = encodeURIComponent(document.referrer || "");
+      var puid = (new URLSearchParams(location.search).get("uid") || "").slice(0, 100);
+      new Image().src = PIXEL_URL + "?t=gary&u=" + pu + "&r=" + pr + (puid ? "&uid=" + encodeURIComponent(puid) : "") + "&_=" + Date.now();
+    } catch (e) {}
+  }
   var BOT_ID = "gking";
   var AVATAR_LABEL = "GK";
   var chatEl = document.querySelector(".gk-chat");
@@ -511,6 +530,10 @@
   var streamRevealActive = false;
   var streamMsgIdx = -1;
   var feedbackState = {};
+  /* Perceived latency: time-to-first-token is what a user actually waits for,
+     and it was previously unmeasured — only total round-trip was logged. */
+  var turnStartedAt = null;
+  var firstTokenAt = null;
 
   /* Session-rating card (Claude-Code-style micro-survey): pops inline after
      the 2nd completed assistant reply, once per conversation. */
@@ -524,38 +547,38 @@
     });
   }
 
+  /* The conversation id lives in sessionStorage, not just in memory, so a
+     reload continues the same conversation instead of silently starting a new
+     one — which used to inflate the session count and deflate session depth.
+     This is the one thing we do put in device storage, and it is the
+     "strictly necessary" kind: it exists to keep the chat the user asked for
+     working, not to measure them. It dies with the tab. */
+  var CONV_KEY = "gk_conv";
+
   function ensureConversationId() {
-    if (!conversationId) conversationId = uuid();
+    if (!conversationId) {
+      try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+      if (!conversationId) conversationId = uuid();
+      try { sessionStorage.setItem(CONV_KEY, conversationId); } catch (e) {}
+    }
+    T.setConversationId(conversationId);
     return conversationId;
   }
 
-  /* Click-through beacon: one delegated listener catches every link in the
-     messages area (inline citations, preview cards, figures).
-     Same GET-pixel endpoint as the page-view tracker; links open in _blank
-     so the page survives to deliver the request. */
-  function fireClickBeacon(a) {
+  /* Click-through: one delegated listener catches every link in the messages
+     area (inline citations, preview cards, figures) and records its rank
+     within the answer. Links open in _blank so the page survives to deliver
+     the beacon. */
+  T.bindAnswerLinks(messagesEl);
+
+  /* Copying an answer is a strong value signal and needs no new UI — the
+     browser's own copy event tells us. Length only; never the text. */
+  messagesEl.addEventListener("copy", function() {
     try {
-      var href = a.href || "";
-      if (!/^https?:/i.test(href)) return;
-      var kind = "inline";
-      if (a.classList.contains("gk-preview-card")) kind = "preview";
-      else if (a.closest && a.closest(".gk-figure")) kind = "figure";
-      new Image().src =
-        PIXEL_URL + "?e=click&t=gary" +
-        "&url=" + encodeURIComponent(href) +
-        "&k=" + kind +
-        "&c=" + encodeURIComponent(conversationId || "") +
-        "&u=" + encodeURIComponent(location.host + location.pathname) +
-        "&_=" + Date.now();
+      var sel = String(document.getSelection ? document.getSelection() : "");
+      T.track("copy_answer", { chars: sel.length });
     } catch (e) {}
-  }
-  function onMessagesLinkClick(ev) {
-    if (ev.type === "auxclick" && ev.button !== 1) return;
-    var a = ev.target && ev.target.closest ? ev.target.closest("a") : null;
-    if (a) fireClickBeacon(a);
-  }
-  messagesEl.addEventListener("click", onMessagesLinkClick);
-  messagesEl.addEventListener("auxclick", onMessagesLinkClick);
+  });
 
   function esc(s) {
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -677,6 +700,7 @@
     }
     sessionRating.shown = true;
     postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_shown", rating: null }));
+    T.track("rating_shown", { kind: "session" });
   }
 
   function hideSessionRatingSoon() {
@@ -818,6 +842,12 @@
 
   function handleSendClick() {
     if (isBusy()) {
+      // Clicking Stop mid-generation is the clearest "too slow / wrong
+      // direction" signal there is — much stronger than a missing rating.
+      T.track("answer_stopped", {
+        waited_ms: turnStartedAt ? Date.now() - turnStartedAt : null,
+        chars_received: streamTarget ? streamTarget.length : 0
+      }, { immediate: true });
       if (abortController) {
         try { abortController.abort(); } catch (e) {}
       }
@@ -1049,10 +1079,20 @@
       };
       p.warnings = prep.warnings || [];
       p.status = "ready";
+      // The upload feature shipped with no instrumentation; these two events
+      // are the whole picture of whether it works for real users.
+      T.track("file_upload", {
+        outcome: "ready", kind: p.kind, size: p.size,
+        pages: prep.pages || null, warnings: (p.warnings || []).length
+      });
       if (p.warnings.length) showUploadNote(p.warnings.join(" "));
     } catch (err) {
       var msg = (err && err.message) ? err.message : "Upload failed.";
       p.status = "error";
+      T.track("file_upload", {
+        outcome: msg === "aborted" ? "cancelled" : "error",
+        kind: p.kind, size: p.size, reason: msg.slice(0, 200)
+      });
       // The chip is narrow, so it gets a clipped version; the banner below the
       // chips carries the server's full explanation of which limit was hit.
       p.error = msg.slice(0, 60);
@@ -1115,6 +1155,17 @@
     textarea.value = "";
     textarea.style.height = "auto";
     ensureConversationId();
+
+    turnStartedAt = Date.now();
+    firstTokenAt = null;
+    T.noteMessageSent();
+    // Length and turn index only — the question text itself already lives in
+    // the server-side turn log and does not need a second, unreviewed copy.
+    T.track("message_sent", {
+      chars: text.length,
+      attachments: atts.length,
+      turn_index: messages.filter(function(m) { return m.role === "user"; }).length + 1
+    });
     var userMsg = { id: uuid(), role: "user", content: text };
     if (atts.length) {
       userMsg.attachments = atts;
@@ -1136,7 +1187,10 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           botId: BOT_ID, messages: messages,
-          conversation_id: ensureConversationId(), source: "fullpage"
+          conversation_id: ensureConversationId(), source: "fullpage",
+          // Campaign + viewport the server can't see, so the turn log carries
+          // the same attribution fields as the beacon events.
+          client_context: T.clientContext ? T.clientContext() : undefined
         }),
         signal: abortController.signal
       });
@@ -1165,7 +1219,10 @@
             if (line.indexOf("data: ") !== 0) continue;
             try {
               var evt = JSON.parse(line.slice(6));
-              if (evt.type === "token" && evt.content) streamTarget += evt.content;
+              if (evt.type === "token" && evt.content) {
+                if (firstTokenAt === null) firstTokenAt = Date.now();
+                streamTarget += evt.content;
+              }
               else if (evt.type === "attached_figures") messages[idx].figures = Array.isArray(evt.figures) ? evt.figures : [];
               else if (evt.type === "previews") messages[idx].previews = Array.isArray(evt.items) ? evt.items : [];
               else if (evt.type === "meta") messages[idx].meta = evt;
@@ -1179,6 +1236,7 @@
         updateSendState();
         maybeShowSessionRating();
         renderMessages();
+        noteAnswerComplete("sse", messages[idx]);
       } else {
         var data;
         try { data = await res.json(); } catch(e) { data = null; }
@@ -1188,6 +1246,7 @@
         messages.push({ id: uuid(), role: "assistant", content: reply, figures: figs, previews: previews });
         maybeShowSessionRating();
         setLoading(false);
+        noteAnswerComplete("json", messages[messages.length - 1]);
       }
     } catch(e) {
       var wasAbort = e && (e.name === "AbortError" || /aborted/i.test(String(e.message || "")));
@@ -1199,12 +1258,42 @@
           last.content = "_(stopped)_";
         }
       } else {
+        // Client-visible failures were previously invisible in the data —
+        // there was no error rate at all. Reason only, never the user's text.
+        T.track("error", {
+          where: "send",
+          name: (e && e.name) || "Error",
+          message: String((e && e.message) || e).slice(0, 200),
+          waited_ms: turnStartedAt ? Date.now() - turnStartedAt : null
+        }, { immediate: true });
         messages.push({ id: uuid(), role: "assistant", content: "Sorry, something went wrong. Please try again." });
       }
       setLoading(false);
     } finally {
       abortController = null;
     }
+  }
+
+  /* Fired once per completed answer: records perceived latency (first token)
+     alongside total time, then starts measuring how long the answer is
+     actually read — the missing denominator for the citation click rate. */
+  function noteAnswerComplete(mode, msg) {
+    T.noteAnswerReceived();
+    T.track("answer_received", {
+      mode: mode,
+      first_token_ms: (firstTokenAt && turnStartedAt) ? firstTokenAt - turnStartedAt : null,
+      total_ms: turnStartedAt ? Date.now() - turnStartedAt : null,
+      chars: (msg && msg.content) ? msg.content.length : 0,
+      figures: (msg && msg.figures) ? msg.figures.length : 0,
+      previews: (msg && msg.previews) ? msg.previews.length : 0
+    });
+    try {
+      var nodes = messagesEl.querySelectorAll(".gk-msg.bot");
+      var el = nodes[nodes.length - 1];
+      if (el) T.trackAnswerDwell(el, { messageId: msg && msg.id });
+    } catch (e) {}
+    turnStartedAt = null;
+    firstTokenAt = null;
   }
 
   sendBtn.addEventListener("click", handleSendClick);
@@ -1216,6 +1305,9 @@
   textarea.addEventListener("keydown", function(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendClick(); }
   });
+  /* chat_focus / first_keystroke / message_abandoned — the three events that
+     separate "never considered asking" from "started typing and gave up". */
+  T.bindComposer(textarea);
 
   messagesEl.addEventListener("click", function(e) {
     var target = e.target;
@@ -1233,12 +1325,14 @@
       sessionRating.rated = srValue;
       sessionRating.commentOpen = srValue !== "good";
       postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating", rating: srValue }));
+      T.track("rating_submitted", { kind: "session", rating: srValue });
       if (!sessionRating.commentOpen) hideSessionRatingSoon();
       renderMessages();
       return;
     } else if (action === "sr-dismiss") {
       sessionRating.dismissed = true;
       postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_dismissed", rating: null }));
+      T.track("rating_submitted", { kind: "session", rating: "dismissed" });
       renderMessages();
       return;
     } else if (action === "sr-comment-cancel") {

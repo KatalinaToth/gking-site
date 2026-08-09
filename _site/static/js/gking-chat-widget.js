@@ -26,13 +26,65 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.5.1";
+  var WIDGET_VERSION = "1.6.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
   // Capture currentScript synchronously (null-safe inside async callbacks).
   var scriptEl = document.currentScript;
 
+  // ── Analytics ───────────────────────────────────────────────────────────
+  // gk-track.js is loaded from the same directory this widget was served from,
+  // so an embed on any host still gets it. It writes nothing to the device
+  // (the visitor id is derived server-side from a rotating salt), which is why
+  // there is no consent gate. Until it loads — or if it never does — T is a
+  // no-op and the widget behaves exactly as before.
+  var T = {
+    track: function () {}, trackOnce: function () {}, setConversationId: function () {},
+    noteMessageSent: function () {}, noteAnswerReceived: function () {},
+    bindComposer: function () {}, bindAnswerLinks: function () {},
+    trackAnswerDwell: function () {}, flush: function () {},
+    clientContext: function () { return undefined; }
+  };
+  var trackerReady = false;
+  var trackerPending = [];
+  var loadedAt = Date.now();
+  // Mirrors init()'s conversationId at module scope so the tracker (loaded
+  // asynchronously, outside init's closure) can pick it up.
+  var currentConversationId = null;
+
+  (function loadTracker() {
+    try {
+      var src = (scriptEl && scriptEl.src) || "";
+      var base = src ? src.replace(/[^/]*$/, "") : "";
+      if (!base) return;
+      var s = document.createElement("script");
+      s.src = base + "gk-track.js";
+      s.async = true;
+      s.onload = function () {
+        if (!window.GKTrack) return;
+        T = window.GKTrack.init({ endpoint: PIXEL_URL, surface: "embed" });
+        trackerReady = true;
+        if (currentConversationId) T.setConversationId(currentConversationId);
+        // Replay anything that happened while the script was in flight —
+        // widget_impression in particular fires before it can have loaded.
+        for (var i = 0; i < trackerPending.length; i++) {
+          T.track(trackerPending[i][0], trackerPending[i][1]);
+        }
+        trackerPending = [];
+      };
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) {}
+  })();
+
+  /** Queue-aware wrapper: safe to call before gk-track.js has loaded. */
+  function track(name, props) {
+    if (trackerReady) T.track(name, props);
+    else if (trackerPending.length < 30) trackerPending.push([name, props || {}]);
+  }
+
+  // Legacy raw beacon, kept as the floor: if gk-track.js is blocked by a host
+  // CSP we still record that the widget was opened.
   var pixelFired = false;
   function firePixel(tracker) {
     if (pixelFired) return;
@@ -766,7 +818,12 @@
     var streaming = false;
     var abortController = null;
     var open = false;
+    var openedAt = null;
     var conversationId = null;
+    /* Perceived latency: time-to-first-token is what the user actually waits
+       for, and it was previously unmeasured — only total round-trip. */
+    var turnStartedAt = null;
+    var firstTokenAt = null;
     // Smooth streaming: tokens accumulate in streamTarget; an rAF loop copies
     // a growing prefix into messages[idx].content (3-8 chars/frame ≈ 200 cps),
     // so the UI animates smoothly instead of jumping per SSE delta.
@@ -781,15 +838,32 @@
     // the 2nd completed assistant reply, once per conversation.
     var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
 
+    /* Persisted in sessionStorage so a page reload continues the same
+       conversation rather than silently forking a new one. This is the only
+       device storage the widget uses, and it is the "strictly necessary"
+       kind — it keeps the chat the user asked for working. It dies with the
+       tab, and analytics identity never touches it. */
+    var CONV_KEY = "gk_conv_widget";
+
     function ensureConversationId() {
-      if (!conversationId) conversationId = uuid();
+      if (!conversationId) {
+        try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+        if (!conversationId) conversationId = uuid();
+        try { sessionStorage.setItem(CONV_KEY, conversationId); } catch (e) {}
+      }
+      currentConversationId = conversationId;
+      if (trackerReady) T.setConversationId(conversationId);
       return conversationId;
     }
 
     // Click-through beacon: one delegated listener catches every link in the
-    // messages area (inline citations, preview cards, figures).
-    // Same GET-pixel endpoint as the page-view tracker; links open in _blank
-    // so the page survives to deliver the request.
+    // messages area (inline citations, preview cards, figures). Links open in
+    // _blank so the page survives to deliver the request.
+    //
+    // The widget lives in a shadow root, so gk-track's own bindAnswerLinks
+    // selector work does not reach in here — this stays local, and adds the
+    // link's rank within its answer so click-through can be modelled by
+    // position rather than merely counted.
     function fireClickBeacon(a) {
       try {
         var href = a.href || "";
@@ -797,10 +871,24 @@
         var kind = "inline";
         if (a.classList.contains("preview-card")) kind = "preview";
         else if (a.closest && a.closest(".figure")) kind = "figure";
+
+        var rank = null;
+        try {
+          var msg = (a.closest && a.closest(".msg")) || messagesEl;
+          var links = msg.querySelectorAll("a[href^='http']");
+          for (var i = 0; i < links.length; i++) { if (links[i] === a) { rank = i + 1; break; } }
+        } catch (e) {}
+
+        if (trackerReady) {
+          T.track("citation_click", { url: href.slice(0, 1000), kind: kind, rank: rank }, { immediate: true });
+          return;
+        }
+        // Fallback when gk-track.js was blocked by a host CSP.
         new Image().src =
           PIXEL_URL + "?e=click&t=widget" +
           "&url=" + encodeURIComponent(href) +
           "&k=" + kind +
+          (rank ? "&rank=" + rank : "") +
           "&c=" + encodeURIComponent(conversationId || "") +
           "&u=" + encodeURIComponent(location.host + location.pathname) +
           "&_=" + Date.now();
@@ -886,6 +974,7 @@
       }
       sessionRating.shown = true;
       postFeedback(buildFeedbackPayload({ messageId: "session", ratedIndex: null, feedbackType: "session_rating_shown", rating: null }));
+      track("rating_shown", { kind: "session" });
     }
 
     function hideSessionRatingSoon() {
@@ -1103,6 +1192,11 @@
       lockPageScroll(open && (mobile || fullscreen));
       if (open) {
         firePixel("widget");
+        openedAt = Date.now();
+        // widget_open is now distinct from widget_impression (fired on load).
+        // Conflating the two is what made the widget's "45% conversion" and
+        // the full page's "19%" look comparable when they never were.
+        track("widget_open", { since_load_ms: Date.now() - loadedAt });
         renderMessages();
         // Don't autofocus on mobile: it pops the keyboard over the welcome
         // message the moment the panel opens.
@@ -1111,6 +1205,12 @@
             textarea.focus();
           }, 0);
         }
+      } else if (openedAt) {
+        track("widget_close", {
+          open_ms: Date.now() - openedAt,
+          messages_sent: messages.filter(function (m) { return m.role === "user"; }).length
+        });
+        openedAt = null;
       }
     }
 
@@ -1136,6 +1236,12 @@
 
     function handleSendClick() {
       if (isBusy()) {
+        // Stopping mid-generation is the clearest "too slow / wrong direction"
+        // signal there is — much stronger than a rating the user never leaves.
+        track("answer_stopped", {
+          waited_ms: turnStartedAt ? Date.now() - turnStartedAt : null,
+          chars_received: streamTarget ? streamTarget.length : 0
+        });
         if (abortController) {
           try { abortController.abort(); } catch (e) {}
         }
@@ -1357,10 +1463,20 @@
         };
         p.warnings = prep.warnings || [];
         p.status = "ready";
+        // The upload feature shipped with no instrumentation; these two events
+        // are the whole picture of whether it works for real users.
+        track("file_upload", {
+          outcome: "ready", kind: p.kind, size: p.size,
+          pages: prep.pages || null, warnings: (p.warnings || []).length
+        });
         if (p.warnings.length) showUploadNote(p.warnings.join(" "));
       } catch (err) {
         var msg = err && err.message ? err.message : "Upload failed.";
         p.status = "error";
+        track("file_upload", {
+          outcome: msg === "aborted" ? "cancelled" : "error",
+          kind: p.kind, size: p.size, reason: msg.slice(0, 200)
+        });
         // The chip is narrow, so it gets a clipped version; the banner below the
         // chips carries the server's full explanation of which limit was hit.
         p.error = msg.slice(0, 60);
@@ -1419,6 +1535,18 @@
       if (!text && atts.length) text = "Please take a look at this.";
       textarea.value = "";
       ensureConversationId();
+
+      turnStartedAt = Date.now();
+      firstTokenAt = null;
+      if (trackerReady) T.noteMessageSent();
+      // Length and turn index only — the question text already lives in the
+      // server-side turn log and does not need a second, unreviewed copy.
+      track("message_sent", {
+        chars: text.length,
+        attachments: atts.length,
+        turn_index: messages.filter(function (m) { return m.role === "user"; }).length + 1
+      });
+
       var userMsg = { id: uuid(), role: "user", content: text };
       if (atts.length) {
         userMsg.attachments = atts;
@@ -1445,7 +1573,10 @@
             botId: config.botId,
             messages: messages,
             conversation_id: ensureConversationId(),
-            source: "embed"
+            source: "embed",
+            // Campaign + viewport the server can't see, so the turn log carries
+            // the same attribution fields as the beacon events.
+            client_context: T.clientContext ? T.clientContext() : undefined
           }),
           signal: abortController.signal
         });
@@ -1478,6 +1609,7 @@
               try {
                 var evt = JSON.parse(line.slice(6));
                 if (evt.type === "token" && evt.content) {
+                  if (firstTokenAt === null) firstTokenAt = Date.now();
                   streamTarget += evt.content;
                 } else if (evt.type === "attached_figures") {
                   messages[idx].figures = Array.isArray(evt.figures) ? evt.figures : [];
@@ -1500,6 +1632,7 @@
           updateSendState();
           maybeShowSessionRating();
           renderMessages();
+          noteAnswerComplete("sse", messages[idx]);
         } else {
           var data;
           try {
@@ -1515,6 +1648,7 @@
           messages.push({ id: uuid(), role: "assistant", content: reply, figures: figs, previews: previews });
           maybeShowSessionRating();
           setLoading(false);
+          noteAnswerComplete("json", messages[messages.length - 1]);
         }
       } catch (e) {
         var wasAbort =
@@ -1528,6 +1662,14 @@
           }
         } else {
           console.error("[GKing Chat Widget] request error:", e);
+          // Client-visible failures were previously invisible in the data —
+          // there was no error rate at all. Reason only, never the user's text.
+          track("error", {
+            where: "send",
+            name: (e && e.name) || "Error",
+            message: String((e && e.message) || e).slice(0, 200),
+            waited_ms: turnStartedAt ? Date.now() - turnStartedAt : null
+          });
           messages.push({
             id: uuid(),
             role: "assistant",
@@ -1538,6 +1680,30 @@
       } finally {
         abortController = null;
       }
+    }
+
+    /* Fired once per completed answer: perceived latency (time to first token)
+       alongside total time, then starts measuring how long the answer is
+       actually read — the missing denominator for the citation click rate. */
+    function noteAnswerComplete(mode, msg) {
+      if (trackerReady) T.noteAnswerReceived();
+      track("answer_received", {
+        mode: mode,
+        first_token_ms: (firstTokenAt && turnStartedAt) ? firstTokenAt - turnStartedAt : null,
+        total_ms: turnStartedAt ? Date.now() - turnStartedAt : null,
+        chars: (msg && msg.content) ? msg.content.length : 0,
+        figures: (msg && msg.figures) ? msg.figures.length : 0,
+        previews: (msg && msg.previews) ? msg.previews.length : 0
+      });
+      if (trackerReady) {
+        try {
+          var nodes = messagesEl.querySelectorAll(".msg.bot");
+          var el = nodes[nodes.length - 1];
+          if (el) T.trackAnswerDwell(el, { messageId: msg && msg.id });
+        } catch (e) {}
+      }
+      turnStartedAt = null;
+      firstTokenAt = null;
     }
 
     btn.addEventListener("click", function () {
@@ -1559,6 +1725,21 @@
         e.preventDefault();
         handleSendClick();
       }
+    });
+    /* chat_focus / first_keystroke / message_abandoned — the three events that
+       separate "never considered asking" from "started typing and gave up".
+       Deferred until gk-track.js is present, since it owns the listeners. */
+    (function bindComposerWhenReady() {
+      if (trackerReady) { T.bindComposer(textarea); return; }
+      setTimeout(bindComposerWhenReady, 250);
+    })();
+    /* Copying an answer is a strong value signal and needs no new UI — the
+       browser's own copy event tells us. Length only; never the text. */
+    messagesEl.addEventListener("copy", function () {
+      try {
+        var sel = String((shadow.getSelection && shadow.getSelection()) || document.getSelection() || "");
+        track("copy_answer", { chars: sel.length });
+      } catch (e) {}
     });
 
     messagesEl.addEventListener("click", function (e) {
@@ -1586,6 +1767,7 @@
             rating: srValue
           })
         );
+        track("rating_submitted", { kind: "session", rating: srValue });
         if (!sessionRating.commentOpen) hideSessionRatingSoon();
         renderMessages();
         return;
@@ -1599,6 +1781,7 @@
             rating: null
           })
         );
+        track("rating_submitted", { kind: "session", rating: "dismissed" });
         renderMessages();
         return;
       } else if (action === "sr-comment-cancel") {
@@ -1723,11 +1906,18 @@
         messages = [];
         feedbackState = {};
         conversationId = null;
+        currentConversationId = null;
+        try { sessionStorage.removeItem(CONV_KEY); } catch (e) {}
         sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
         renderMessages();
       },
       config: config
     };
+
+    /* The widget is now on the page but closed. This is the impression the
+       funnel was missing: previously the only widget event fired on OPEN, so
+       there was no denominator for "how many people saw it and ignored it". */
+    track("widget_impression", { version: WIDGET_VERSION });
   }
 
   if (document.readyState === "loading") {
