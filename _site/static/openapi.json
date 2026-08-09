@@ -118,7 +118,14 @@
             }
           },
           "400": {
-            "description": "Unsupported file type"
+            "description": "Unsupported file type, or (when `size` is supplied) larger than the limit for that type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadError"
+                }
+              }
+            }
           },
           "403": {
             "description": "Uploads are currently disabled"
@@ -129,7 +136,7 @@
     "/api/upload-prepare": {
       "post": {
         "summary": "Prepare an uploaded file for use in chat",
-        "description": "Step 2 of 2. Returns the attachment object to place in a user message's `attachments` array. Files are retained 24 hours and never added to the corpus.",
+        "description": "Step 2 of 2. Returns the attachment object to place in a user message's `attachments` array. Files are retained 24 hours and never added to the corpus. This is the authoritative limit check \u2014 it reads the real bytes, so it can refuse a file that step 1 accepted. Limits: PDF 5 pages / 10 MB; TXT and MD 40 KB; PNG, JPG, WEBP and GIF 5 MB; CSV and XLSX 10 MB; and per conversation 3 files totalling at most 15 pages. The per-conversation budget is a running total across turns, not per request: an attachment stays in context on every later turn of the same conversation, so a fourth file is refused even if the first three were sent earlier.",
         "requestBody": {
           "required": true,
           "content": {
@@ -152,7 +159,14 @@
             }
           },
           "400": {
-            "description": "Bad key or unsupported type"
+            "description": "Refused: over a size, page, length, or per-conversation budget limit; unreadable PDF; or a key not owned by this conversation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadError"
+                }
+              }
+            }
           },
           "500": {
             "description": "The file could not be processed"
@@ -346,7 +360,7 @@
               "integer",
               "null"
             ],
-            "description": "PDF page count."
+            "description": "PDF page count. At most 5; a longer PDF is refused by /api/upload-prepare."
           },
           "chars": {
             "type": [
@@ -356,7 +370,7 @@
           },
           "indexed": {
             "type": "boolean",
-            "description": "True when the document was too long to read whole and is searched instead."
+            "description": "Retained for compatibility and always false: the long-document path it selects is unreachable under the 5-page limit."
           }
         }
       },
@@ -372,6 +386,10 @@
           },
           "filename": {
             "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Optional, advisory. Byte length of the file you are about to PUT. Sending it gets an over-limit file rejected before you spend the upload; a presigned PUT cannot bind content length, so /api/upload-prepare re-checks the real byte length regardless."
           }
         }
       },
@@ -407,6 +425,29 @@
             "type": "string"
           },
           "key": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadError": {
+        "type": "object",
+        "description": "Returned with HTTP 400 when an upload is refused. `message` is written for display to an end user.",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "unsupported_type",
+              "too_large",
+              "too_many_pages",
+              "too_long",
+              "unreadable_pdf",
+              "too_many_files",
+              "page_budget_exceeded",
+              "bad_json",
+              "bad_key"
+            ]
+          },
+          "message": {
             "type": "string"
           }
         }

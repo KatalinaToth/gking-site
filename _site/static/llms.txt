@@ -58,17 +58,37 @@ File attachments (PDF, CSV/XLSX, TXT/MD, images) — optional, two steps before
 the chat call. Files are kept for 24 hours and are never added to the corpus.
 Not available on the lambda endpoint or via MCP; use the CloudFront host above.
 
-  1. POST /api/upload-url  {"conversation_id": "...", "filename": "paper.pdf"}
+  1. POST /api/upload-url  {"conversation_id": "...", "filename": "paper.pdf",
+                            "size": 812344}
      → {"url": "<presigned S3 PUT>", "key": "...", "kind": "pdf",
         "media_type": "application/pdf", "filename": "paper.pdf"}
      PUT the raw bytes to `url` with that Content-Type. HTTP 403 here means
-     uploads are currently disabled — degrade gracefully.
+     uploads are currently disabled — degrade gracefully. `size` is optional and
+     advisory: sending it gets an over-limit file rejected before you spend the
+     upload, but step 2 re-checks the real byte length either way.
 
   2. POST /api/upload-prepare  {"conversation_id": "...", "key": "<from step 1>"}
-     → {"file_id": "...", "kind": "pdf", "pages": 38, "chars": 56294,
+     → {"file_id": "...", "kind": "pdf", "pages": 4, "chars": 8214,
         "indexed": false, "warnings": []}
-     `indexed: true` means the document was too long to read whole and will be
-     searched instead of read end to end.
+
+Limits. Step 2 returns HTTP 400 {"error": "...", "message": "..."} when one is
+exceeded; `message` is written to be shown to an end user as-is.
+
+  PDF             5 pages, 10 MB      too_many_pages / too_large
+  TXT, MD         40 KB               too_long / too_large
+  PNG JPG WEBP    5 MB                too_large
+  GIF
+  CSV, XLSX       10 MB               too_large
+  per conversation  3 files,          too_many_files /
+                    15 pages total    page_budget_exceeded
+
+The per-conversation budget is a running total, not a per-request one: an
+attachment stays in context on every later turn of the same conversation, so a
+fourth file is refused even if the first three were sent on earlier turns. A PDF
+whose page count cannot be read is refused (`unreadable_pdf`) rather than
+accepted. `indexed` and the long-document path it refers to are unreachable
+under the 5-page limit; the field is retained for compatibility and is always
+false.
 
 Then attach the step-2 object to the user message as `attachments` (an array;
 attached files stay available on later turns of the same conversation):
@@ -77,7 +97,7 @@ attached files stay available on later turns of the same conversation):
        {"role": "user", "content": "Review this paper.",
         "attachments": [{"key": "...", "file_id": "...", "filename": "paper.pdf",
                          "kind": "pdf", "media_type": "application/pdf",
-                         "pages": 38, "chars": 56294, "indexed": false}]}]}
+                         "pages": 4, "chars": 8214, "indexed": false}]}]}
 
 A turn carrying attachments answers from the file AND from Gary's corpus.
 Turns without `attachments` behave exactly as before.

@@ -311,6 +311,28 @@
      frame while streaming and would wipe upload state mid-flight. */
   .gk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .gk-chips:empty { display: none; }
+
+  /* Upload rejections (too large / too many pages / unsupported type). The red
+     chip alone is easy to miss and its text is clipped to the chip width, so the
+     reason is repeated here in full and stays until dismissed. */
+  .gk-upload-err {
+    display: none; align-items: flex-start; gap: 8px;
+    background: #fdf5f5; border: 1px solid #e6c3c1; border-radius: 10px;
+    padding: 8px 10px; margin-bottom: 8px;
+    font-size: 12px; line-height: 1.45; color: #8c3b36;
+  }
+  .gk-upload-err.show { display: flex; }
+  /* Non-fatal note (e.g. a scanned PDF) — same slot, amber not red, because the
+     file was accepted and nothing needs fixing. */
+  .gk-upload-err.warn { background: #fdfaf2; border-color: #e8dcc0; color: #7a5c1e; }
+  .gk-upload-err.warn .gk-upload-err-x { color: #c2a86a; }
+  .gk-upload-err.warn .gk-upload-err-x:hover { color: #7a5c1e; }
+  .gk-upload-err-text { flex: 1; }
+  .gk-upload-err-x {
+    background: none; border: none; cursor: pointer; color: #c08a86;
+    font-size: 15px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+  }
+  .gk-upload-err-x:hover { color: #8c3b36; }
   .gk-chip {
     display: flex; align-items: center; gap: 8px;
     background: #f4f7fc; border: 1px solid #dde8f5; border-radius: 10px;
@@ -419,6 +441,10 @@
 
   <div class="gk-input-area">
     <div class="gk-chips" id="gk-chips"></div>
+    <div class="gk-upload-err" id="gk-upload-err" role="alert" aria-live="polite">
+      <span class="gk-upload-err-text" id="gk-upload-err-text"></span>
+      <button class="gk-upload-err-x" type="button" id="gk-upload-err-x" aria-label="Dismiss">&times;</button>
+    </div>
     <div class="gk-input-row">
       <button id="gk-attach" class="gk-attach" type="button" title="Attach a file" aria-label="Attach a file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -844,7 +870,60 @@
   var attachBtn = document.getElementById("gk-attach");
   var fileInput = document.getElementById("gk-file");
   var chipsEl = document.getElementById("gk-chips");
+  var errEl = document.getElementById("gk-upload-err");
+  var errTextEl = document.getElementById("gk-upload-err-text");
   var pending = [];
+
+  // Mirrors the server limits in src/lib/uploads/storage.ts (gking-avatar-v3).
+  // Duplicated because the two live in separate repos. The server re-checks
+  // everything, so a stale copy here only costs a slower, less specific
+  // rejection — it can never let an over-limit file through.
+  var MAX_ATTACHMENTS = 3;
+  // text is the server's MAX_TEXT_CHARS (a byte length despite the name), not
+  // its looser MAX_BYTES.text — pre-checking the tighter of the two here is what
+  // makes the message specific instead of a generic server rejection.
+  var MAX_BYTES = { pdf: 10485760, image: 5242880, tabular: 10485760, text: 40000 };
+  var EXT_KIND = {
+    pdf: "pdf", png: "image", jpg: "image", jpeg: "image", webp: "image",
+    gif: "image", csv: "tabular", xlsx: "tabular", txt: "text", md: "text"
+  };
+
+  function showUploadError(msg) {
+    errTextEl.textContent = msg;
+    errEl.classList.remove("warn");
+    errEl.classList.add("show");
+  }
+  // Non-fatal notes returned by /api/upload-prepare in `warnings[]` — until now
+  // these were parsed and then dropped, so the user never learned that e.g. a
+  // scanned PDF would be read as page images.
+  function showUploadNote(msg) {
+    errTextEl.textContent = msg;
+    errEl.classList.add("warn");
+    errEl.classList.add("show");
+  }
+  function clearUploadError() {
+    errEl.classList.remove("show");
+    errEl.classList.remove("warn");
+    errTextEl.textContent = "";
+  }
+  document.getElementById("gk-upload-err-x").addEventListener("click", clearUploadError);
+
+  // Pre-flight check, so an obviously-too-big file fails instantly instead of
+  // after a full upload. Type is re-checked here because the input's `accept`
+  // attribute only filters the OS picker — drag-drop and paste bypass it.
+  function localRejection(file) {
+    var ext = (file.name.split(".").pop() || "").toLowerCase();
+    var kind = EXT_KIND[ext];
+    if (!kind) {
+      return "“" + file.name + "” isn’t a supported file type. " +
+        "You can attach PDF, CSV, XLSX, TXT, MD, PNG, JPG, WEBP or GIF files.";
+    }
+    if (file.size > MAX_BYTES[kind]) {
+      return "“" + file.name + "” is " + fmtBytes(file.size) +
+        " — the limit is " + fmtBytes(MAX_BYTES[kind]) + " for this file type.";
+    }
+    return null;
+  }
 
   function anyUploading() {
     return pending.some(function(p) { return p.status === "uploading" || p.status === "preparing"; });
@@ -897,6 +976,7 @@
     var p = pending.filter(function(x) { return x.id === id; })[0];
     if (p && p.xhr) { try { p.xhr.abort(); } catch (err) {} }
     pending = pending.filter(function(x) { return x.id !== id; });
+    clearUploadError();
     renderChips();
   });
 
@@ -932,7 +1012,11 @@
     try {
       var r = await fetch(UPLOAD_URL_EP, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation_id: ensureConversationId(), filename: file.name })
+        body: JSON.stringify({
+          conversation_id: ensureConversationId(),
+          filename: file.name,
+          size: file.size
+        })
       });
       if (r.status === 403) {
         // Kill switch is on — stop offering uploads at all rather than letting
@@ -965,15 +1049,32 @@
       };
       p.warnings = prep.warnings || [];
       p.status = "ready";
+      if (p.warnings.length) showUploadNote(p.warnings.join(" "));
     } catch (err) {
+      var msg = (err && err.message) ? err.message : "Upload failed.";
       p.status = "error";
-      p.error = (err && err.message) ? err.message.slice(0, 60) : "failed";
+      // The chip is narrow, so it gets a clipped version; the banner below the
+      // chips carries the server's full explanation of which limit was hit.
+      p.error = msg.slice(0, 60);
+      // "aborted" is the user removing the chip mid-upload, not a failure.
+      if (msg !== "aborted") showUploadError("“" + p.name + "” — " + msg);
     }
     renderChips();
   }
 
   function attachFiles(list) {
-    for (var i = 0; i < list.length; i++) startUpload(list[i]);
+    clearUploadError();
+    for (var i = 0; i < list.length; i++) {
+      // startUpload pushes onto `pending` synchronously, so this stays accurate
+      // across the loop even though the uploads themselves are in flight.
+      if (pending.length >= MAX_ATTACHMENTS) {
+        showUploadError("You can attach up to " + MAX_ATTACHMENTS + " files at a time.");
+        break;
+      }
+      var bad = localRejection(list[i]);
+      if (bad) { showUploadError(bad); continue; }
+      startUpload(list[i]);
+    }
   }
 
   attachBtn.addEventListener("click", function() { fileInput.click(); });
@@ -1022,6 +1123,7 @@
       userMsg.attachmentChips = pending.filter(function(p) { return p.status === "ready"; })
         .map(function(p) { return { id: p.id, name: p.name, kind: p.kind, size: p.size, status: "ready", prepared: p.prepared }; });
       pending = [];
+      clearUploadError();
       renderChips();
     }
     messages.push(userMsg);

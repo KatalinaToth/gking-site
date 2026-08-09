@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.5.0";
+  var WIDGET_VERSION = "1.5.1";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -241,6 +241,23 @@
     // wholesale every animation frame while streaming.
     ".chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; }",
     ".chips:empty { display: none; }",
+    // Upload rejections. The red chip alone is easy to miss and clips its text,
+    // so the reason is repeated here in full until dismissed.
+    ".upload-err {",
+    "  display: none; align-items: flex-start; gap: 6px;",
+    "  margin: 8px 12px 0; padding: 7px 9px;",
+    "  background: #fdf5f5; border: 1px solid #e6c3c1; border-radius: 9px;",
+    "  font-size: 11px; line-height: 1.45; color: #8c3b36;",
+    "}",
+    ".upload-err.show { display: flex; }",
+    // Non-fatal note (e.g. a scanned PDF) — same slot, amber not red, because
+    // the file was accepted and nothing needs fixing.
+    ".upload-err.warn { background: #fdfaf2; border-color: #e8dcc0; color: #7a5c1e; }",
+    ".upload-err.warn .upload-err-x { color: #c2a86a; }",
+    ".upload-err.warn .upload-err-x:hover { color: #7a5c1e; }",
+    ".upload-err-text { flex: 1; }",
+    ".upload-err-x { background: none; border: none; cursor: pointer; color: #c08a86; font-size: 14px; line-height: 1; padding: 0 2px; flex-shrink: 0; }",
+    ".upload-err-x:hover { color: #8c3b36; }",
     ".chip {",
     "  display: flex; align-items: center; gap: 6px;",
     "  background: #f4f7fc; border: 1px solid #dde8f5; border-radius: 9px;",
@@ -526,6 +543,10 @@
     '  </div>',
     '  <div class="messages"></div>',
     '  <div class="chips"></div>',
+    '  <div class="upload-err" role="alert" aria-live="polite">',
+    '    <span class="upload-err-text"></span>',
+    '    <button class="upload-err-x" type="button" aria-label="Dismiss">&times;</button>',
+    '  </div>',
     '  <div class="input-row">',
     '    <button class="attach" type="button" aria-label="Attach a file" title="Attach a file">',
     '      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
@@ -728,6 +749,8 @@
     var attachBtn = shadow.querySelector(".attach");
     var fileInput = shadow.querySelector(".file-input");
     var chipsEl = shadow.querySelector(".chips");
+    var errEl = shadow.querySelector(".upload-err");
+    var errTextEl = shadow.querySelector(".upload-err-text");
     var generalFeedbackBtn = shadow.querySelector(".general-feedback-btn");
     var modalOverlay = shadow.querySelector(".modal-overlay");
     var modalTextarea = shadow.querySelector(".modal-textarea");
@@ -1166,6 +1189,57 @@
     var UPLOAD_PREP_EP = String(config.apiUrl).replace(/\/api\/chat$/, "/api/upload-prepare");
     var pending = [];
 
+    // Mirrors the server limits in src/lib/uploads/storage.ts (gking-avatar-v3).
+    // Duplicated because the two live in separate repos. The server re-checks
+    // everything, so a stale copy here only costs a slower, less specific
+    // rejection — it can never let an over-limit file through.
+    var MAX_ATTACHMENTS = 3;
+    // text is the server's MAX_TEXT_CHARS (a byte length despite the name), not
+    // its looser MAX_BYTES.text — pre-checking the tighter of the two here is
+    // what makes the message specific instead of a generic server rejection.
+    var MAX_BYTES = { pdf: 10485760, image: 5242880, tabular: 10485760, text: 40000 };
+    var EXT_KIND = {
+      pdf: "pdf", png: "image", jpg: "image", jpeg: "image", webp: "image",
+      gif: "image", csv: "tabular", xlsx: "tabular", txt: "text", md: "text"
+    };
+
+    function showUploadError(msg) {
+      errTextEl.textContent = msg;
+      errEl.classList.remove("warn");
+      errEl.classList.add("show");
+    }
+    // Non-fatal notes returned by /api/upload-prepare in `warnings[]` — the
+    // widget previously discarded these entirely, so the user never learned that
+    // e.g. a scanned PDF would be read as page images.
+    function showUploadNote(msg) {
+      errTextEl.textContent = msg;
+      errEl.classList.add("warn");
+      errEl.classList.add("show");
+    }
+    function clearUploadError() {
+      errEl.classList.remove("show");
+      errEl.classList.remove("warn");
+      errTextEl.textContent = "";
+    }
+    shadow.querySelector(".upload-err-x").addEventListener("click", clearUploadError);
+
+    // Pre-flight check, so an obviously-too-big file fails instantly instead of
+    // after a full upload. Type is re-checked here because the input's `accept`
+    // attribute only filters the OS picker — drag-drop and paste bypass it.
+    function localRejection(file) {
+      var ext = (file.name.split(".").pop() || "").toLowerCase();
+      var kind = EXT_KIND[ext];
+      if (!kind) {
+        return "“" + file.name + "” isn’t a supported file type. " +
+          "You can attach PDF, CSV, XLSX, TXT, MD, PNG, JPG, WEBP or GIF files.";
+      }
+      if (file.size > MAX_BYTES[kind]) {
+        return "“" + file.name + "” is " + fmtBytes(file.size) +
+          " — the limit is " + fmtBytes(MAX_BYTES[kind]) + " for this file type.";
+      }
+      return null;
+    }
+
     function anyUploading() {
       return pending.some(function (p) { return p.status === "uploading" || p.status === "preparing"; });
     }
@@ -1216,6 +1290,7 @@
       var p = pending.filter(function (x) { return x.id === id; })[0];
       if (p && p.xhr) { try { p.xhr.abort(); } catch (err) {} }
       pending = pending.filter(function (x) { return x.id !== id; });
+      clearUploadError();
       renderChips();
     });
 
@@ -1246,7 +1321,11 @@
       try {
         var r = await fetch(UPLOAD_URL_EP, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversation_id: ensureConversationId(), filename: file.name })
+          body: JSON.stringify({
+            conversation_id: ensureConversationId(),
+            filename: file.name,
+            size: file.size
+          })
         });
         if (r.status === 403) {
           // Kill switch is on — stop offering uploads rather than failing repeatedly.
@@ -1276,16 +1355,34 @@
           kind: prep.kind, media_type: prep.media_type,
           pages: prep.pages, chars: prep.chars, indexed: prep.indexed
         };
+        p.warnings = prep.warnings || [];
         p.status = "ready";
+        if (p.warnings.length) showUploadNote(p.warnings.join(" "));
       } catch (err) {
+        var msg = err && err.message ? err.message : "Upload failed.";
         p.status = "error";
-        p.error = err && err.message ? err.message.slice(0, 60) : "failed";
+        // The chip is narrow, so it gets a clipped version; the banner below the
+        // chips carries the server's full explanation of which limit was hit.
+        p.error = msg.slice(0, 60);
+        // "aborted" is the user removing the chip mid-upload, not a failure.
+        if (msg !== "aborted") showUploadError("“" + p.name + "” — " + msg);
       }
       renderChips();
     }
 
     function attachFiles(list) {
-      for (var i = 0; i < list.length; i++) startUpload(list[i]);
+      clearUploadError();
+      for (var i = 0; i < list.length; i++) {
+        // startUpload pushes onto `pending` synchronously, so this stays accurate
+        // across the loop even though the uploads themselves are in flight.
+        if (pending.length >= MAX_ATTACHMENTS) {
+          showUploadError("You can attach up to " + MAX_ATTACHMENTS + " files at a time.");
+          break;
+        }
+        var bad = localRejection(list[i]);
+        if (bad) { showUploadError(bad); continue; }
+        startUpload(list[i]);
+      }
     }
 
     attachBtn.addEventListener("click", function () { fileInput.click(); });
@@ -1333,6 +1430,7 @@
             return { id: p.id, name: p.name, kind: p.kind, size: p.size, status: "ready", prepared: p.prepared };
           });
         pending = [];
+        clearUploadError();
         renderChips();
       }
       messages.push(userMsg);
