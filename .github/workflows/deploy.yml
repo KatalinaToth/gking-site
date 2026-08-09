@@ -35,7 +35,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,18 +93,38 @@ jobs:
         with:
           path: ./public
 
-      # Dual-publish to Cloudflare Pages during the GitHub Pages -> Cloudflare
-      # migration. GitHub Pages remains the source of truth for gking.harvard.edu
-      # until DNS is cut over, so this step is best-effort: continue-on-error
-      # ensures a Cloudflare hiccup can never block the GitHub Pages deploy
-      # below. Deploys to the `main` branch = the production URL on Cloudflare.
-      - name: Publish to Cloudflare Pages (parallel host during migration)
-        continue-on-error: true
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy public --project-name=gking --branch=main
+      # Live site: gking.harvard.edu CNAMEs to gking-7bw.pages.dev. GitHub Pages
+      # still gets an artifact, but visitors hit Cloudflare. The API token's
+      # account must own that project — a3a02fc failed with npx exit 1 when
+      # deploying only to gking-7bw (likely "Project not found" for this token).
+      # List + deploy every gking* project the token can see, and fail if none
+      # succeed so we never silently publish only to a dead project again.
+      - name: Publish to Cloudflare Pages (live host)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          echo "== Cloudflare Pages projects visible to this API token =="
+          npx --yes wrangler@4 pages project list
+
+          echo "== Deploying built site =="
+          deployed=0
+          # Prefer the DNS target hostname's project name first, then legacy.
+          for project in gking-7bw gking; do
+            echo "---- pages deploy --project-name=${project} ----"
+            if npx --yes wrangler@4 pages deploy public --project-name="${project}" --branch=main; then
+              echo "OK: deployed to ${project}"
+              deployed=1
+            else
+              echo "WARN: deploy to ${project} failed (see error above)"
+            fi
+          done
+
+          if [[ "${deployed}" -ne 1 ]]; then
+            echo "::error::No Cloudflare Pages deploy succeeded. Check that CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN belong to the account that owns gking-7bw.pages.dev (see project list above)."
+            exit 1
+          fi
 
   deploy:
     environment:
