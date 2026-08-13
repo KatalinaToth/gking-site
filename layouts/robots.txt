@@ -21,3 +21,6 @@ Disallow: /categories/
 Disallow: /publication_types/
 
 Sitemap: {{ "sitemap.xml" | absURL }}
+
+# Guidance for AI assistants and LLM crawlers (site overview + GaryAI API):
+# {{ "llms.txt" | absURL }}

@@ -67,6 +67,10 @@ jobs:
       - name: Refresh publication first-commit dates
         run: python3 _automation/scripts/writings/compute_publication_first_commit.py
 
+      # baseURL comes from hugo.yaml (https://gking.harvard.edu/). Do NOT pass
+      # --baseURL from configure-pages: its base_url output resolves to
+      # http:// (not https://), which used to poison every canonical URL,
+      # og:url, and sitemap entry with the insecure scheme.
       - name: Build with Hugo
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
@@ -76,8 +80,7 @@ jobs:
           hugo \
             --gc \
             --minify \
-            --buildFuture \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+            --buildFuture
 
       - name: Smoke-test build output
         run: python3 _automation/scripts/smoke_build.py
@@ -126,13 +129,17 @@ jobs:
             exit 1
           fi
 
+  # Best-effort backup copy only: visitors reach the site via Cloudflare Pages
+  # (gking.harvard.edu CNAMEs to gking-7bw.pages.dev), so a GitHub Pages
+  # hiccup must never fail the workflow or mask a Cloudflare problem.
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    continue-on-error: true
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (backup host)
         id: deployment
         uses: actions/deploy-pages@v4

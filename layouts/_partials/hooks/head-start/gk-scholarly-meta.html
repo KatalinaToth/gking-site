@@ -1,0 +1,72 @@
+{{/* Scholarly metadata for publication pages.
+
+     Emits two machine-readable descriptions of each paper, invisible to
+     visitors, built entirely from front matter the pages already have
+     (title, authors, date, abstract, publication venue, links):
+
+       1. Google Scholar "Highwire" meta tags (citation_title, citation_author,
+          citation_pdf_url, ...) — the format Scholar's crawler indexes.
+       2. A schema.org ScholarlyArticle (or Book) JSON-LD block — the format
+          search engines and AI crawlers use to identify papers, authors,
+          dates, and DOIs without scraping prose.
+
+     Blind pages (blind: true) get nothing: they are noindexed by
+     gk-blind-robots.html and must stay undiscoverable. */}}
+{{- if and (eq .Section "publication") .IsPage (not .Params.blind) -}}
+  {{- /* First PDF link, as an absolute URL. Mirror the theme's link
+         resolution (page_links.html): a schemeless path is first tried as a
+         page-bundle resource, else resolved against the site root — most
+         front matter says "files/x.pdf" but the file lives at /files/x.pdf. */ -}}
+  {{- $pdf := "" -}}
+  {{- $doi := "" -}}
+  {{- range .Params.links -}}
+    {{- $u := .url | default "" -}}
+    {{- if and (eq (.type | default "") "pdf") (not $pdf) $u -}}
+      {{- if hasPrefix $u "http" -}}
+        {{- $pdf = $u -}}
+      {{- else -}}
+        {{- with $.Resources.GetMatch $u -}}
+          {{- $pdf = .Permalink -}}
+        {{- else -}}
+          {{- $pdf = strings.TrimPrefix "/" $u | absURL -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if and (not $doi) (in $u "doi.org/") -}}
+      {{- $doi = index (split $u "doi.org/") 1 -}}
+    {{- end -}}
+  {{- end -}}
+  <meta name="citation_title" content="{{ .Title }}">
+  {{- range .Params.authors }}
+  <meta name="citation_author" content="{{ . }}">
+  {{- end }}
+  {{- with .Date }}
+  <meta name="citation_publication_date" content="{{ .Format "2006/01/02" }}">
+  {{- end }}
+  {{- with $pdf }}
+  <meta name="citation_pdf_url" content="{{ . }}">
+  {{- end }}
+  {{- with $doi }}
+  <meta name="citation_doi" content="{{ . }}">
+  {{- end }}
+  {{- $type := "ScholarlyArticle" -}}
+  {{- range .Params.publication_types -}}
+    {{- if in . "book" }}{{ $type = "Book" }}{{ end -}}
+  {{- end -}}
+  {{- $authors := slice -}}
+  {{- range .Params.authors -}}
+    {{- $authors = $authors | append (dict "@type" "Person" "name" .) -}}
+  {{- end -}}
+  {{- $article := dict
+        "@context" "https://schema.org"
+        "@type" $type
+        "headline" .Title
+        "name" .Title
+        "url" .Permalink -}}
+  {{- with $authors }}{{ $article = merge $article (dict "author" .) }}{{ end -}}
+  {{- with .Date }}{{ $article = merge $article (dict "datePublished" (.Format "2006-01-02")) }}{{ end -}}
+  {{- with .Params.abstract }}{{ $article = merge $article (dict "abstract" (. | markdownify | plainify | chomp)) }}{{ end -}}
+  {{- with .Params.publication }}{{ $article = merge $article (dict "isPartOf" (dict "@type" "CreativeWork" "name" (. | markdownify | plainify | chomp))) }}{{ end -}}
+  {{- with $doi }}{{ $article = merge $article (dict "identifier" . "sameAs" (printf "https://doi.org/%s" .)) }}{{ end -}}
+  <script type="application/ld+json">{{ $article | jsonify | safeJS }}</script>
+{{- end -}}
