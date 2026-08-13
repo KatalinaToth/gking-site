@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.6.0";
+  var WIDGET_VERSION = "1.8.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -73,6 +73,66 @@
         }
         trackerPending = [];
       };
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) {}
+  })();
+
+  // KaTeX is vendored next to this script (js/katex/). Loaded lazily so a page
+  // that never opens the chat pays nothing for it.
+  var katexRequested = false;
+  var katexOnReady = null;
+  function loadKatex() {
+    if (katexRequested) return;
+    katexRequested = true;
+    try {
+      var src = (scriptEl && scriptEl.src) || "";
+      var base = src ? src.replace(/[^/]*$/, "") : "";
+      if (!base) return;
+      var cssHref = base + "katex/katex.min.css";
+      // @font-face declared inside a shadow root is ignored by Chrome/Safari,
+      // so the face definitions have to live in the document. Everything else
+      // (the .katex rules) goes in the shadow root next to the widget styles.
+      if (!document.querySelector('link[data-gk-katex-fonts]')) {
+        var fl = document.createElement("link");
+        fl.rel = "stylesheet";
+        fl.href = base + "katex/katex-fonts.css";
+        fl.setAttribute("data-gk-katex-fonts", "1");
+        (document.head || document.documentElement).appendChild(fl);
+      }
+      katexCssHref = cssHref;
+      if (shadowRootEl) injectKatexCss(shadowRootEl);
+      var s = document.createElement("script");
+      s.src = base + "katex/katex.min.js";
+      s.async = true;
+      s.onload = function () { if (katexOnReady) katexOnReady(); };
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) {}
+  }
+
+  var katexCssHref = "";
+  var shadowRootEl = null;
+  function injectKatexCss(root) {
+    if (!katexCssHref || !root || root.querySelector("link[data-gk-katex]")) return;
+    var l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = katexCssHref;
+    l.setAttribute("data-gk-katex", "1");
+    root.appendChild(l);
+  }
+
+  // Step thread state machine, loaded from the same directory as this script.
+  // Eager (not deferred to first open like KaTeX) because a step event can
+  // arrive seconds after the page loads, but never blocking: if it fails to
+  // load, window.GKSteps stays undefined and every call site below no-ops, so
+  // the chat works exactly as it did before the step thread existed.
+  (function loadSteps() {
+    try {
+      var src = (scriptEl && scriptEl.src) || "";
+      var base = src ? src.replace(/[^/]*$/, "") : "";
+      if (!base) return;
+      var s = document.createElement("script");
+      s.src = base + "gk-steps.js";
+      s.async = true;
       (document.head || document.documentElement).appendChild(s);
     } catch (e) {}
   })();
@@ -146,7 +206,14 @@
     // here or fonts render slightly bolder than the chatbot on macOS.
     ":host { all: initial; font-family: " + FONT + "; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }",
     // Force the font on every descendant — UA stylesheets reset font-family on form controls.
-    ":host, :host *, button, input, textarea, select { font-family: " + FONT + " !important; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }",
+    ":host, button, input, textarea, select { font-family: " + FONT + " !important; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }",
+    // …but not inside a formula. KaTeX picks a specific math face per glyph
+    // (KaTeX_Math for variables, KaTeX_Size* for stretchy delimiters, …) and
+    // positions everything from those metrics, so forcing the UI font here
+    // silently wrecks the layout it just computed. Split out from the rule
+    // above so an engine without complex :not() drops only this half and the
+    // widget still inherits its font from :host.
+    ":host *:not(.katex):not(.katex *) { font-family: " + FONT + " !important; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }",
     "* { box-sizing: border-box; }",
     ".btn {",
     "  position: fixed; right: 24px; bottom: 24px;",
@@ -243,6 +310,67 @@
     "  padding: 1px 5px; font-size: 0.92em; color: #5876a9;",
     "}",
     ".bubble a { color: #5876a9; text-decoration: underline; }",
+    // ── Step thread ────────────────────────────────────────────────────────
+    // One line per tool call while the answer is being worked out. Colour is
+    // used for exactly one thing here: the step happening right now.
+    ".thread { list-style: none; margin: 0 0 10px; padding: 0; }",
+    ".thread-step {",
+    "  display: flex; align-items: baseline; gap: 8px;",
+    "  font-size: 12.5px; line-height: 1.6; color: #7a8fb5;",
+    "  animation: gkRise 200ms ease-out;",
+    "}",
+    ".thread-dot {",
+    "  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;",
+    "  background: #b0bfd4; transform: translateY(-1px);",
+    "}",
+    ".thread-step.is-live { color: #5876a9; }",
+    ".thread-step.is-live .thread-dot {",
+    "  background: #5876a9;",
+    "  animation: gkBreathe 1.8s ease-in-out infinite;",
+    "}",
+    ".thread-summary {",
+    "  display: block; margin: 0 0 10px; padding: 0;",
+    "  background: none; border: none; cursor: pointer;",
+    "  font-family: inherit; font-size: 12.5px; color: #b0bfd4;",
+    "  transition: color 140ms ease;",
+    "}",
+    ".thread-summary:hover { color: #7a8fb5; }",
+    // Dots on top, caption underneath. align-items keeps the dots bubble from
+    // stretching to the caption's width.
+    ".wait-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }",
+    ".waiting {",
+    "  font-size: 12.5px; color: #7a8fb5; padding: 1px 4px;",
+    "  animation: gkRise 200ms ease-out;",
+    "}",
+    "@keyframes gkBreathe {",
+    "  0%, 100% { box-shadow: 0 0 0 0 rgba(88, 118, 169, 0.40); }",
+    "  50% { box-shadow: 0 0 0 5px rgba(88, 118, 169, 0); }",
+    "}",
+    "@keyframes gkRise {",
+    "  from { opacity: 0; transform: translateY(4px); }",
+    "}",
+    // Motion is decoration here — every state the animations convey is also
+    // carried by text and colour, so switching them off costs nothing.
+    "@media (prefers-reduced-motion: reduce) {",
+    "  *, *::before, *::after {",
+    "    animation-duration: 0.01ms !important;",
+    "    animation-iteration-count: 1 !important;",
+    "    transition-duration: 0.01ms !important;",
+    "  }",
+    "}",
+    // KaTeX lays out with normal whitespace handling; the bubble's pre-wrap
+    // would otherwise stretch every space inside a formula.
+    ".bubble .katex { white-space: normal; font-size: 1.05em; }",
+    ".bubble .katex-display {",
+    "  margin: 0.5em 0; padding: 2px 0;",
+    "  overflow-x: auto; overflow-y: hidden;",
+    "}",
+    ".bubble .katex-display > .katex { white-space: nowrap; font-size: 0.98em; }",
+    // A cases block or a long equation doesn't fit the default bubble width in
+    // a 360px panel. Let a bubble that holds one use the full column; the
+    // overflow-x above stays as the fallback for whatever is still too wide
+    // (and for engines without :has(), where this rule simply drops).
+    ".msg.bot .bubble:has(.katex-display) { max-width: 97%; }",
     ".typing {",
     "  background: #fff; border: 1px solid #dde8f5;",
     "  border-radius: 14px 14px 14px 4px;",
@@ -654,19 +782,170 @@
     return String(s).replace(/\[ATTACH:[^\]]*\]/g, "").replace(/\n{3,}/g, "\n\n").trim();
   }
 
+  // Typeset LaTeX once per distinct formula. renderMessages() rebuilds every
+  // bubble on each streamed token, so without this cache a long answer would
+  // re-run KaTeX over every formula it contains on every frame.
+  var mathCache = {};
+  function renderTex(tex, display) {
+    if (!(window.katex && window.katex.renderToString)) return null;
+    var key = (display ? "D" : "I") + tex;
+    if (mathCache[key] !== undefined) return mathCache[key];
+    var out;
+    try {
+      out = window.katex.renderToString(tex, {
+        displayMode: display,
+        throwOnError: false,
+        strict: false,
+        trust: false,
+        output: "html"
+      });
+    } catch (e) {
+      out = null;
+    }
+    mathCache[key] = out;
+    return out;
+  }
+
+  // An inline $…$ needs to survive prose that merely mentions money. Require
+  // the delimiters to hug their content and the content to look like math
+  // rather than a bare amount, which is what rules out "costs $5 and $10".
+  function looksLikeInlineMath(s) {
+    if (!s || /^\s|\s$/.test(s) || /\n\s*\n/.test(s) || s.length > 400) return false;
+    return /[a-zA-Z\\^_{}=+\/<>]/.test(s);
+  }
+
+  /**
+   * Pull code spans and math out of `text` before any markdown substitution
+   * runs, leaving a \u0000n\u0000 placeholder behind for each. Math has to be
+   * lifted out ahead of escapeHtml (which would turn `a < b` into `a &lt; b`
+   * and feed that to KaTeX), and code has to be lifted so `$x$` inside a code
+   * span stays literal.
+   */
+  function protectSpans(src) {
+    src = String(src);
+    var spans = [];
+    var out = "";
+    var i = 0;
+
+    function hold(html) {
+      spans.push(html);
+      return "\u0000" + (spans.length - 1) + "\u0000";
+    }
+
+    // A display block is its own box, so drop one newline on each side to keep
+    // the pre-wrap bubble from stacking a blank line above and below it.
+    function holdDisplay(html) {
+      out = out.replace(/[ \t]*\n[ \t]*$/, "");
+      return hold(html);
+    }
+    function eatTrailingNewline() {
+      var m = /^[ \t]*\n[ \t]*/.exec(src.slice(i));
+      if (m) i += m[0].length;
+    }
+
+    function closeAt(open, close, from) {
+      var at = src.indexOf(close, from);
+      return at === -1 ? -1 : at;
+    }
+
+    while (i < src.length) {
+      var rest = src.slice(i);
+      var at;
+
+      // Fenced code: not rendered as a block today, but its content must not
+      // be typeset, so hold it verbatim (backticks and all).
+      if (rest.slice(0, 3) === "```") {
+        at = closeAt("```", "```", i + 3);
+        if (at === -1) { out += hold(escapeHtml(rest)); break; }
+        out += hold(escapeHtml(src.slice(i, at + 3)));
+        i = at + 3;
+        continue;
+      }
+
+      if (rest.charAt(0) === "`") {
+        at = closeAt("`", "`", i + 1);
+        if (at !== -1 && at > i + 1) {
+          out += hold("<code>" + escapeHtml(src.slice(i + 1, at)) + "</code>");
+          i = at + 1;
+          continue;
+        }
+      }
+
+      if (rest.slice(0, 2) === "$$") {
+        at = closeAt("$$", "$$", i + 2);
+        if (at !== -1) {
+          var dtex = src.slice(i + 2, at);
+          i = at + 2;
+          out += holdDisplay(renderTex(dtex, true) || escapeHtml("$$" + dtex + "$$"));
+          eatTrailingNewline();
+          continue;
+        }
+        // Unterminated: mid-stream. Leave it raw; the closer arrives shortly.
+      }
+
+      if (rest.slice(0, 2) === "\\[") {
+        at = closeAt("\\]", "\\]", i + 2);
+        if (at !== -1) {
+          var btex = src.slice(i + 2, at);
+          i = at + 2;
+          out += holdDisplay(renderTex(btex, true) || escapeHtml("\\[" + btex + "\\]"));
+          eatTrailingNewline();
+          continue;
+        }
+      }
+
+      if (rest.slice(0, 2) === "\\(") {
+        at = closeAt("\\)", "\\)", i + 2);
+        if (at !== -1) {
+          var ptex = src.slice(i + 2, at);
+          out += hold(renderTex(ptex, false) || escapeHtml("\\(" + ptex + "\\)"));
+          i = at + 2;
+          continue;
+        }
+      }
+
+      // Escaped dollar — a literal, never a delimiter.
+      if (rest.slice(0, 2) === "\\$") {
+        out += "$";
+        i += 2;
+        continue;
+      }
+
+      if (rest.charAt(0) === "$") {
+        at = src.indexOf("$", i + 1);
+        if (at !== -1) {
+          var itex = src.slice(i + 1, at);
+          if (looksLikeInlineMath(itex)) {
+            out += hold(renderTex(itex, false) || escapeHtml("$" + itex + "$"));
+            i = at + 1;
+            continue;
+          }
+        }
+      }
+
+      out += src.charAt(i);
+      i += 1;
+    }
+
+    return { text: out, spans: spans };
+  }
+
   function renderInline(text) {
-    var html = escapeHtml(text);
+    var held = protectSpans(text);
+    var html = escapeHtml(held.text);
     // Convert markdown headings (# … ######) to bold text
     html = html.replace(/^(#{1,6})\s+(.+)$/gm, function (_, hashes, content) {
       return "<strong>" + content + "</strong>";
     });
     html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, t, u) {
       var safeUrl = /^(https?:|mailto:|\/)/i.test(u) ? u : "#";
       return '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener noreferrer">' + t + "</a>";
     });
-    return html;
+    return html.replace(/\u0000(\d+)\u0000/g, function (m, n) {
+      var s = held.spans[Number(n)];
+      return s === undefined ? m : s;
+    });
   }
 
   function hostOf(u) {
@@ -779,6 +1058,8 @@
     var styleEl = document.createElement("style");
     styleEl.textContent = CSS;
     shadow.appendChild(styleEl);
+    shadowRootEl = shadow;
+    injectKatexCss(shadow);
 
     var wrapper = document.createElement("div");
     wrapper.innerHTML = TEMPLATE;
@@ -834,6 +1115,15 @@
     // Per-message feedback state, keyed by message.id:
     //   { rated: 'up'|'down'|null, commentOpen: bool, commentDraft: string, commentSent: bool }
     var feedbackState = {};
+    // Waiting caption: how long the dots stay bare before we put words to the
+    // wait. Long enough that a quick answer never flashes it.
+    var WAITING_CAPTION_MS = 600;
+    var waitingSince = 0;
+    var waitingTimer = null;
+    // Which finished step threads the reader has re-opened, by message id.
+    // Kept out here rather than on the DOM because renderMessages() rebuilds
+    // the whole transcript on every frame.
+    var expandedThreads = {};
     // Session-rating card (Claude-Code-style micro-survey): pops inline after
     // the 2nd completed assistant reply, once per conversation.
     var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
@@ -896,6 +1186,21 @@
     }
     function onMessagesClick(ev) {
       if (ev.type === "auxclick" && ev.button !== 1) return;
+      var summaryBtn =
+        ev.target && ev.target.closest ? ev.target.closest(".thread-summary") : null;
+      if (summaryBtn) {
+        var tid = summaryBtn.getAttribute("data-thread-id");
+        if (tid) {
+          expandedThreads[tid] = true;
+          var msg = null;
+          for (var i = 0; i < messages.length; i++) {
+            if (messages[i].id === tid) { msg = messages[i]; break; }
+          }
+          track("step_thread_expanded", { step_count: msg && msg.steps ? msg.steps.count() : 0 });
+          renderMessages();
+        }
+        return;
+      }
       var a = ev.target && ev.target.closest ? ev.target.closest("a") : null;
       if (a) fireClickBeacon(a);
     }
@@ -1075,6 +1380,41 @@
       return box;
     }
 
+    /**
+     * The step thread, as a plain string rebuilt from state.
+     *
+     * renderMessages() destroys and rebuilds this subtree on every animation
+     * frame while streaming, so the thread must hold nothing in the DOM that
+     * it can't recompute — no timers, no expand state stored on the element.
+     * The live step keeps a stable `is-live` class across rebuilds, which is
+     * what stops its CSS animation restarting (and visibly stuttering) 60
+     * times a second.
+     */
+    function renderStepsHtml(thread, msgId) {
+      if (!thread || thread.isEmpty()) return "";
+      var summary = thread.summary();
+      // Finished turns fold to one quiet line, so a read-back conversation is
+      // prose rather than a log — unless the reader asked to see the steps.
+      if (summary && !expandedThreads[msgId]) {
+        return (
+          '<button type="button" class="thread-summary" data-thread-id="' +
+          escapeHtml(msgId) + '">' + escapeHtml(summary) + "</button>"
+        );
+      }
+      if (!summary && !thread.isVisible()) return "";
+      var steps = thread.steps();
+      var live = thread.liveStep();
+      var out = '<ol class="thread">';
+      for (var i = 0; i < steps.length; i++) {
+        var cls = live && steps[i].id === live.id ? "thread-step is-live" : "thread-step is-done";
+        out +=
+          '<li class="' + cls + '"><span class="thread-dot"></span>' +
+          escapeHtml(steps[i].label) + "</li>";
+      }
+      out += "</ol>";
+      return out;
+    }
+
     function renderMessages() {
       syncCommentDrafts();
       messagesEl.innerHTML = "";
@@ -1104,10 +1444,14 @@
             var showExtras = !(streaming && isLastForFigs);
             var showFigures = m.figures && m.figures.length > 0 && showExtras;
             var showPreviews = m.previews && m.previews.length > 0 && showExtras;
+            // The thread sits above the prose: it describes the work that
+            // produced the answer, so it reads as preamble, not footnote.
+            var stepsHtml = renderStepsHtml(m.steps, m.id);
             node.innerHTML =
               '<div class="avatar-sm">' +
               escapeHtml(config.avatarLabel) +
               '</div><div class="bubble">' +
+              stepsHtml +
               renderInline(visible) +
               (showPreviews ? renderPreviewsHtml(m.previews) : "") +
               (showFigures ? renderFiguresHtml(m.figures) : "") +
@@ -1134,10 +1478,22 @@
       ) {
         var typing = document.createElement("div");
         typing.className = "msg bot";
+        // Measured on the live pipeline: 4s to first token on the fast path,
+        // 8s before the first step on the tool-using path. Bare dots for that
+        // long read as a hang, so after a beat a caption joins them underneath
+        // — the dots keep running, since they are the thing that reads as
+        // "still alive". The wording avoids "reading", which the step labels
+        // use for specific papers: "Reading that over" then "Reading <title>"
+        // invites the reader to think the first line named a paper too.
+        var waited = waitingSince ? Date.now() - waitingSince : 0;
         typing.innerHTML =
-          '<div class="avatar-sm">' +
-          escapeHtml(config.avatarLabel) +
-          '</div><div class="typing"><span></span><span></span><span></span></div>';
+          '<div class="avatar-sm">' + escapeHtml(config.avatarLabel) + "</div>" +
+          '<div class="wait-stack">' +
+          '<div class="typing"><span></span><span></span><span></span></div>' +
+          (waited >= WAITING_CAPTION_MS
+            ? '<div class="waiting" role="status">Thinking it through</div>'
+            : "") +
+          "</div>";
         messagesEl.appendChild(typing);
       }
       if (sessionRating.shown && !sessionRating.dismissed) {
@@ -1192,6 +1548,10 @@
       lockPageScroll(open && (mobile || fullscreen));
       if (open) {
         firePixel("widget");
+        // Answers routinely contain LaTeX; fetch the typesetter on first open
+        // and repaint once it lands so anything already on screen typesets.
+        katexOnReady = function () { renderMessages(); };
+        loadKatex();
         openedAt = Date.now();
         // widget_open is now distinct from widget_impression (fired on load).
         // Conflating the two is what made the widget's "45% conversion" and
@@ -1252,6 +1612,19 @@
 
     function setLoading(v) {
       loading = v;
+      if (v) {
+        waitingSince = Date.now();
+        // Nothing else repaints between "sent" and the first token, so the
+        // caption needs its own nudge to appear.
+        if (waitingTimer) clearTimeout(waitingTimer);
+        waitingTimer = setTimeout(function () {
+          waitingTimer = null;
+          if (loading) renderMessages();
+        }, WAITING_CAPTION_MS + 20);
+      } else {
+        waitingSince = 0;
+        if (waitingTimer) { clearTimeout(waitingTimer); waitingTimer = null; }
+      }
       updateSendState();
       renderMessages();
     }
@@ -1591,6 +1964,12 @@
           streaming = true;
           setLoading(false);
 
+          // The step thread hangs off the message itself, so renderMessages()
+          // can rebuild it from state on every frame without any DOM-held
+          // state to lose. onReveal is a no-op here: this surface already
+          // repaints continuously while streaming.
+          if (window.GKSteps) messages[idx].steps = window.GKSteps.create();
+
           // Hand the assistant slot to the rAF reveal loop.
           streamTarget = "";
           streamRevealed = 0;
@@ -1615,9 +1994,20 @@
                   messages[idx].figures = Array.isArray(evt.figures) ? evt.figures : [];
                 } else if (evt.type === "previews") {
                   messages[idx].previews = Array.isArray(evt.items) ? evt.items : [];
+                } else if (evt.type === "step") {
+                  if (messages[idx].steps) messages[idx].steps.addStep(evt.id, evt.label);
+                } else if (evt.type === "step_done") {
+                  if (messages[idx].steps) messages[idx].steps.completeStep(evt.id);
+                } else if (evt.type === "done") {
+                  if (messages[idx].steps) messages[idx].steps.finish(evt.worked_ms, evt.step_count);
                 } else if (evt.type === "meta") {
                   messages[idx].meta = evt;
                 }
+                // NOTE: unknown event types fall through this chain silently,
+                // on purpose. gking-site is served statically and a cached
+                // bundle can lag a backend deploy by days, so tolerating events
+                // it has never heard of is load-bearing. Do not turn this into
+                // a switch with a throwing default.
               } catch (e) {
                 // skip malformed events
               }
@@ -1625,6 +2015,10 @@
           }
 
           stopRevealLoop();
+          // A stream can end without ever sending `done` (dropped connection,
+          // Lambda timeout). Sealing is what stops a step's dot breathing
+          // forever — the one failure of this feature a user can see.
+          if (messages[idx].steps) messages[idx].steps.seal();
           if (!messages[idx].content) {
             messages[idx].content = "Sorry, I couldn't generate a response.";
           }
@@ -1654,6 +2048,11 @@
         var wasAbort =
           e && (e.name === "AbortError" || /aborted/i.test(String(e.message || "")));
         stopRevealLoop();
+        // Same reason as the clean-exit seal above: abort and network error
+        // both leave any in-flight step open.
+        for (var si = 0; si < messages.length; si++) {
+          if (messages[si] && messages[si].steps) messages[si].steps.seal();
+        }
         streaming = false;
         if (wasAbort) {
           var last = messages[messages.length - 1];

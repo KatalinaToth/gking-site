@@ -70,6 +70,64 @@
     padding: 1px 5px; font-size: 0.9em; color: #5876a9;
   }
   .gk-bubble a { color: #5876a9; text-decoration: underline; }
+
+  /* Step thread: one line per tool call while the answer is worked out.
+     Colour marks exactly one thing — the step happening right now. */
+  .gk-thread { list-style: none; margin: 0 0 12px; padding: 0; }
+  .gk-thread-step {
+    display: flex; align-items: baseline; gap: 9px;
+    font-size: 13.5px; line-height: 1.65; color: #7a8fb5;
+    white-space: normal;
+    animation: gkRise 200ms ease-out;
+  }
+  .gk-thread-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    background: #b0bfd4; transform: translateY(-1px);
+  }
+  .gk-thread-step.is-live { color: #5876a9; }
+  .gk-thread-step.is-live .gk-thread-dot {
+    background: #5876a9;
+    animation: gkBreathe 1.8s ease-in-out infinite;
+  }
+  .gk-thread-summary {
+    display: block; margin: 0 0 12px; padding: 0;
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 13.5px; color: #b0bfd4;
+    transition: color 140ms ease;
+  }
+  .gk-thread-summary:hover { color: #7a8fb5; }
+  /* Dots on top, caption underneath. align-items keeps the dots bubble from
+     stretching to the caption's width. */
+  .gk-wait-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .gk-waiting {
+    font-size: 13px; color: #7a8fb5; padding: 1px 4px;
+    animation: gkRise 200ms ease-out;
+  }
+  @keyframes gkBreathe {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(88, 118, 169, 0.40); }
+    50% { box-shadow: 0 0 0 5px rgba(88, 118, 169, 0); }
+  }
+  @keyframes gkRise {
+    from { opacity: 0; transform: translateY(4px); }
+  }
+  /* Motion is decoration here — every state the animations convey is also
+     carried by text and colour, so switching them off costs nothing. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* KaTeX lays out with normal whitespace handling; the bubble's pre-wrap
+     would otherwise stretch every space inside a formula. */
+  .gk-bubble .katex { white-space: normal; font-size: 1.05em; }
+  .gk-bubble .katex-display {
+    margin: 0.5em 0; padding: 2px 0;
+    overflow-x: auto; overflow-y: hidden;
+  }
+  .gk-bubble .katex-display > .katex { white-space: nowrap; }
   .gk-msg.user .gk-bubble strong { color: #fff; }
   .gk-msg.user .gk-bubble a { color: #fff; }
 
@@ -477,7 +535,10 @@
   </div>
 </div>
 
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script src="/js/katex/katex.min.js" defer></script>
 <script src="/js/gk-track.js"></script>
+<script src="/js/gk-steps.js"></script>
 <script>
 (function() {
   var API_URL = "https://d325iygsd5krw9.cloudfront.net/api/chat";
@@ -530,6 +591,15 @@
   var streamRevealActive = false;
   var streamMsgIdx = -1;
   var feedbackState = {};
+  // Which finished step threads the reader has re-opened, by message id.
+  // Kept outside the DOM because renderMessages() rebuilds the transcript on
+  // every animation frame while streaming.
+  var expandedThreads = {};
+  // Waiting caption: how long the dots stay bare before we put words to the
+  // wait. Long enough that a quick answer never flashes it.
+  var WAITING_CAPTION_MS = 600;
+  var waitingSince = 0;
+  var waitingTimer = null;
   /* Perceived latency: time-to-first-token is what a user actually waits for,
      and it was previously unmeasured — only total round-trip was logged. */
   var turnStartedAt = null;
@@ -584,16 +654,148 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
+  // Typeset LaTeX once per distinct formula. renderMessages() rebuilds every
+  // bubble on each streamed token, so without this cache a long answer would
+  // re-run KaTeX over every formula it contains on every frame.
+  var mathCache = {};
+  function renderTex(tex, display) {
+    if (!(window.katex && window.katex.renderToString)) return null;
+    var key = (display ? "D" : "I") + tex;
+    if (mathCache[key] !== undefined) return mathCache[key];
+    var out;
+    try {
+      out = window.katex.renderToString(tex, {
+        displayMode: display, throwOnError: false, strict: false, trust: false, output: "html"
+      });
+    } catch (e) { out = null; }
+    mathCache[key] = out;
+    return out;
+  }
+
+  // An inline $…$ needs to survive prose that merely mentions money. Require
+  // the delimiters to hug their content and the content to look like math
+  // rather than a bare amount, which is what rules out "costs $5 and $10".
+  function looksLikeInlineMath(s) {
+    if (!s || /^\s|\s$/.test(s) || /\n\s*\n/.test(s) || s.length > 400) return false;
+    return /[a-zA-Z\\^_{}=+\/<>]/.test(s);
+  }
+
+  /**
+   * Pull code spans and math out of `text` before any markdown substitution
+   * runs, leaving a \u0000n\u0000 placeholder behind for each. Math has to be
+   * lifted out ahead of esc() (which would turn `a < b` into `a &lt; b` and
+   * feed that to KaTeX), and code has to be lifted so `$x$` inside a code span
+   * stays literal.
+   */
+  function protectSpans(src) {
+    src = String(src);
+    var spans = [], out = "", i = 0;
+
+    function hold(html) {
+      spans.push(html);
+      return "\u0000" + (spans.length - 1) + "\u0000";
+    }
+    // A display block is its own box, so drop one newline on each side to keep
+    // the pre-wrap bubble from stacking a blank line above and below it.
+    function holdDisplay(html) {
+      out = out.replace(/[ \t]*\n[ \t]*$/, "");
+      return hold(html);
+    }
+    function eatTrailingNewline() {
+      var m = /^[ \t]*\n[ \t]*/.exec(src.slice(i));
+      if (m) i += m[0].length;
+    }
+
+    while (i < src.length) {
+      var rest = src.slice(i), at;
+
+      // Fenced code: not rendered as a block today, but its content must not
+      // be typeset, so hold it verbatim (backticks and all).
+      if (rest.slice(0, 3) === "```") {
+        at = src.indexOf("```", i + 3);
+        if (at === -1) { out += hold(esc(rest)); break; }
+        out += hold(esc(src.slice(i, at + 3)));
+        i = at + 3;
+        continue;
+      }
+
+      if (rest.charAt(0) === "`") {
+        at = src.indexOf("`", i + 1);
+        if (at !== -1 && at > i + 1) {
+          out += hold("<code>" + esc(src.slice(i + 1, at)) + "</code>");
+          i = at + 1;
+          continue;
+        }
+      }
+
+      if (rest.slice(0, 2) === "$$") {
+        at = src.indexOf("$$", i + 2);
+        if (at !== -1) {
+          var dtex = src.slice(i + 2, at);
+          i = at + 2;
+          out += holdDisplay(renderTex(dtex, true) || esc("$$" + dtex + "$$"));
+          eatTrailingNewline();
+          continue;
+        }
+        // Unterminated: mid-stream. Leave it raw; the closer arrives shortly.
+      }
+
+      if (rest.slice(0, 2) === "\\[") {
+        at = src.indexOf("\\]", i + 2);
+        if (at !== -1) {
+          var btex = src.slice(i + 2, at);
+          i = at + 2;
+          out += holdDisplay(renderTex(btex, true) || esc("\\[" + btex + "\\]"));
+          eatTrailingNewline();
+          continue;
+        }
+      }
+
+      if (rest.slice(0, 2) === "\\(") {
+        at = src.indexOf("\\)", i + 2);
+        if (at !== -1) {
+          var ptex = src.slice(i + 2, at);
+          out += hold(renderTex(ptex, false) || esc("\\(" + ptex + "\\)"));
+          i = at + 2;
+          continue;
+        }
+      }
+
+      // Escaped dollar — a literal, never a delimiter.
+      if (rest.slice(0, 2) === "\\$") { out += "$"; i += 2; continue; }
+
+      if (rest.charAt(0) === "$") {
+        at = src.indexOf("$", i + 1);
+        if (at !== -1) {
+          var itex = src.slice(i + 1, at);
+          if (looksLikeInlineMath(itex)) {
+            out += hold(renderTex(itex, false) || esc("$" + itex + "$"));
+            i = at + 1;
+            continue;
+          }
+        }
+      }
+
+      out += src.charAt(i);
+      i += 1;
+    }
+
+    return { text: out, spans: spans };
+  }
+
   function renderInline(text) {
-    var html = esc(text);
+    var held = protectSpans(text);
+    var html = esc(held.text);
     html = html.replace(/^(#{1,6})\s+(.+)$/gm, function(_, h, c) { return "<strong>" + c + "</strong>"; });
     html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, t, u) {
       var safe = /^(https?:|mailto:|\/)/i.test(u) ? u : "#";
       return '<a href="' + esc(safe) + '" target="_blank" rel="noopener noreferrer">' + t + '</a>';
     });
-    return html;
+    return html.replace(/\u0000(\d+)\u0000/g, function(m, n) {
+      var s = held.spans[Number(n)];
+      return s === undefined ? m : s;
+    });
   }
 
   function renderFigures(figs) {
@@ -745,6 +947,33 @@
     return '<svg width="15" height="15" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 13V4a1 1 0 0 0-1-1H6.5a2 2 0 0 0-2 1.7l-1.4 7A2 2 0 0 0 5 14h5l-1 4a2 2 0 0 0 2 2.5L16 13z"/><path d="M21 13h-4V3h4z"/></svg>';
   }
 
+  /**
+   * The step thread, as a plain string rebuilt from state — renderMessages()
+   * destroys and rebuilds this subtree on every animation frame while
+   * streaming, so it must hold nothing in the DOM it can't recompute. The live
+   * step keeps a stable `is-live` class across rebuilds, which is what stops
+   * its animation restarting 60 times a second.
+   */
+  function renderStepsHtml(thread, msgId) {
+    if (!thread || thread.isEmpty()) return "";
+    var summary = thread.summary();
+    // Finished turns fold to one quiet line, so a conversation read back is
+    // prose rather than a log — unless the reader asked to see the steps.
+    if (summary && !expandedThreads[msgId]) {
+      return '<button type="button" class="gk-thread-summary" data-thread-id="' +
+             esc(msgId) + '">' + esc(summary) + '</button>';
+    }
+    if (!summary && !thread.isVisible()) return "";
+    var steps = thread.steps();
+    var live = thread.liveStep();
+    var out = '<ol class="gk-thread">';
+    for (var i = 0; i < steps.length; i++) {
+      var cls = live && steps[i].id === live.id ? "gk-thread-step is-live" : "gk-thread-step is-done";
+      out += '<li class="' + cls + '"><span class="gk-thread-dot"></span>' + esc(steps[i].label) + '</li>';
+    }
+    return out + '</ol>';
+  }
+
   function renderMessages() {
     messagesEl.querySelectorAll("[data-comment-textarea]").forEach(function(ta) {
       var id = ta.getAttribute("data-comment-textarea");
@@ -772,8 +1001,10 @@
           var showExtras = !(streaming && isLast);
           var showFigs = m.figures && m.figures.length && showExtras;
           var showPreviews = m.previews && m.previews.length && showExtras;
+          // The thread sits above the prose: it describes the work that
+          // produced the answer, so it reads as preamble, not footnote.
           node.innerHTML = '<div class="gk-avatar">' + esc(AVATAR_LABEL) + '</div>' +
-            '<div class="gk-bubble">' + renderInline(vis) +
+            '<div class="gk-bubble">' + renderStepsHtml(m.steps, m.id) + renderInline(vis) +
             (showPreviews ? renderPreviews(m.previews) : "") +
             (showFigs ? renderFigures(m.figures) : "") + '</div>';
         }
@@ -811,7 +1042,21 @@
     if (loading && (messages.length === 0 || messages[messages.length - 1].role !== "assistant")) {
       var t = document.createElement("div");
       t.className = "gk-msg bot";
-      t.innerHTML = '<div class="gk-avatar">' + esc(AVATAR_LABEL) + '</div><div class="gk-typing"><span></span><span></span><span></span></div>';
+      // Measured on the live pipeline: ~4s to first token on the fast path,
+      // ~8s before the first step on the tool-using path. Bare dots for that
+      // long read as a hang, so after a beat a caption joins them underneath —
+      // the dots keep running, since they are the thing that reads as "still
+      // alive". The wording avoids "reading", which the step labels use for
+      // specific papers: "Reading that over" followed by "Reading <title>"
+      // invites the reader to think the first line named a paper too.
+      var waited = waitingSince ? Date.now() - waitingSince : 0;
+      t.innerHTML = '<div class="gk-avatar">' + esc(AVATAR_LABEL) + '</div>' +
+        '<div class="gk-wait-stack">' +
+        '<div class="gk-typing"><span></span><span></span><span></span></div>' +
+        (waited >= WAITING_CAPTION_MS
+          ? '<div class="gk-waiting" role="status">Thinking it through</div>'
+          : '') +
+        '</div>';
       messagesEl.appendChild(t);
     }
 
@@ -858,6 +1103,19 @@
 
   function setLoading(v) {
     loading = v;
+    if (v) {
+      waitingSince = Date.now();
+      // Nothing else repaints between "sent" and the first token, so the
+      // caption needs its own nudge to appear.
+      if (waitingTimer) clearTimeout(waitingTimer);
+      waitingTimer = setTimeout(function() {
+        waitingTimer = null;
+        if (loading) renderMessages();
+      }, WAITING_CAPTION_MS + 20);
+    } else {
+      waitingSince = 0;
+      if (waitingTimer) { clearTimeout(waitingTimer); waitingTimer = null; }
+    }
     updateSendState();
     renderMessages();
   }
@@ -1206,6 +1464,11 @@
         setLoading(false);
 
         streamTarget = ""; streamRevealed = 0; streamMsgIdx = idx;
+        // The step thread hangs off the message itself, so renderMessages()
+        // can rebuild it from state on every frame with no DOM state to lose.
+        // onReveal is unnecessary here: this surface repaints continuously
+        // while streaming.
+        if (window.GKSteps) messages[idx].steps = window.GKSteps.create();
         startRevealLoop();
 
         while (true) {
@@ -1225,12 +1488,23 @@
               }
               else if (evt.type === "attached_figures") messages[idx].figures = Array.isArray(evt.figures) ? evt.figures : [];
               else if (evt.type === "previews") messages[idx].previews = Array.isArray(evt.items) ? evt.items : [];
+              else if (evt.type === "step") { if (messages[idx].steps) messages[idx].steps.addStep(evt.id, evt.label); }
+              else if (evt.type === "step_done") { if (messages[idx].steps) messages[idx].steps.completeStep(evt.id); }
+              else if (evt.type === "done") { if (messages[idx].steps) messages[idx].steps.finish(evt.worked_ms, evt.step_count); }
               else if (evt.type === "meta") messages[idx].meta = evt;
+              // NOTE: unknown event types fall through silently, on purpose.
+              // This page is served statically and a cached bundle can lag a
+              // backend deploy, so tolerating unfamiliar events is
+              // load-bearing. Do not make this a switch with a throwing default.
             } catch(e) {}
           }
         }
 
         stopRevealLoop();
+        // A stream can end without ever sending `done` (dropped connection,
+        // Lambda timeout). Sealing is what stops a step's dot breathing
+        // forever — the one failure of this feature a user can see.
+        if (messages[idx].steps) messages[idx].steps.seal();
         if (!messages[idx].content) messages[idx].content = "Sorry, I couldn't generate a response.";
         streaming = false;
         updateSendState();
@@ -1251,6 +1525,11 @@
     } catch(e) {
       var wasAbort = e && (e.name === "AbortError" || /aborted/i.test(String(e.message || "")));
       stopRevealLoop();
+      // Same reason as the clean-exit seal above: abort and network error both
+      // leave any in-flight step open.
+      for (var si = 0; si < messages.length; si++) {
+        if (messages[si] && messages[si].steps) messages[si].steps.seal();
+      }
       streaming = false;
       if (wasAbort) {
         var last = messages[messages.length - 1];
@@ -1285,7 +1564,11 @@
       total_ms: turnStartedAt ? Date.now() - turnStartedAt : null,
       chars: (msg && msg.content) ? msg.content.length : 0,
       figures: (msg && msg.figures) ? msg.figures.length : 0,
-      previews: (msg && msg.previews) ? msg.previews.length : 0
+      previews: (msg && msg.previews) ? msg.previews.length : 0,
+      // Rides on the existing event rather than a new one: both numbers are
+      // already at hand here, and a turn's step count only means anything
+      // alongside its latency.
+      step_count: (msg && msg.steps) ? msg.steps.count() : 0
     });
     try {
       var nodes = messagesEl.querySelectorAll(".gk-msg.bot");
@@ -1310,6 +1593,22 @@
   T.bindComposer(textarea);
 
   messagesEl.addEventListener("click", function(e) {
+    // Re-opening a folded step thread. Handled before the data-action walk
+    // below because the summary is a button with no data-action of its own.
+    var summaryBtn = e.target && e.target.closest ? e.target.closest(".gk-thread-summary") : null;
+    if (summaryBtn) {
+      var tid = summaryBtn.getAttribute("data-thread-id");
+      if (tid) {
+        expandedThreads[tid] = true;
+        var tmsg = null;
+        for (var ti = 0; ti < messages.length; ti++) {
+          if (messages[ti].id === tid) { tmsg = messages[ti]; break; }
+        }
+        T.track("step_thread_expanded", { step_count: tmsg && tmsg.steps ? tmsg.steps.count() : 0 });
+        renderMessages();
+      }
+      return;
+    }
     var target = e.target;
     while (target && target !== messagesEl && !target.getAttribute("data-action")) target = target.parentNode;
     if (!target || target === messagesEl) return;
@@ -1385,6 +1684,12 @@
 
   renderMessages();
   textarea.focus();
+
+  /* katex.min.js is deferred, so anything painted before it lands still shows
+     raw LaTeX. Repaint once it's available. */
+  if (!(window.katex && window.katex.renderToString)) {
+    window.addEventListener("load", function() { renderMessages(); });
+  }
 
   /* On the /ask-gary page: hide the popup widget button on desktop,
      auto-open it full-screen on mobile (where the native chat is hidden). */
