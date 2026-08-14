@@ -386,6 +386,22 @@ Adjust `--color-accent` to coordinate with the student's institution if desired 
 
 ---
 
+## AI & Search Visibility
+
+AI assistants (ChatGPT, Claude, Perplexity) and search engines now answer questions about researchers by crawling their sites. The rules below make the site fully readable to them. Every item is invisible to human visitors — no layout, text, or styling changes.
+
+1. **One `https://` address everywhere.** `baseURL` in `hugo.yaml` must be the final public URL with `https://` — never `http://`, and never derived from a CI variable at build time (GitHub's `configure-pages` `base_url` output can resolve to `http://` and silently poison every canonical URL, `og:url`, and sitemap entry with the insecure scheme). Canonical tags and the sitemap inherit `baseURL`, so getting this one line right fixes all of them at once.
+
+2. **robots.txt welcomes crawlers and signposts the map.** Create `static/robots.txt` (or a `layouts/robots.txt` template) with: `User-agent: *` and no blocks aimed at AI crawlers (GPTBot, ClaudeBot, PerplexityBot, etc.); a `Sitemap:` line with the absolute `https://` sitemap URL; and a comment pointing to `/llms.txt`. Never `Disallow` a path that the sitemap advertises — the two files must not contradict each other.
+
+3. **llms.txt at the site root.** A plain-text/markdown welcome file (~8–12 lines) that AI agents look for at `/llms.txt`: one or two sentences on who the owner is (name, role, institution, research area), then a short list of the site's key URLs (home, CV, papers, contact). Write it from the same "Who I Am" facts as the rest of the site. Not linked from the nav — machines find it by convention.
+
+4. **All content in the HTML, no JS-only content.** The papers section is server-rendered already; keep it that way, including abstracts (the `<details>` abstract text must be in the DOM at load, not fetched or injected). A crawler that never runs JavaScript must still see every paper title, author list, venue, and abstract.
+
+5. **Structured data.** The homepage `schema.org` Person block from the invisible-metadata rule above covers identity. If the owner has real publication pages (rather than the single-page papers list), also apply the scholarly-metadata rule from the Academic form's build instructions (Google Scholar `citation_*` tags plus `ScholarlyArticle` JSON-LD per paper).
+
+---
+
 ## GitHub Actions Deployment
 
 `.github/workflows/deploy.yml`:
@@ -516,8 +532,10 @@ Produce ALL of the following:
 20. **`.github/workflows/deploy.yml`** — the Actions workflow above
 21. **`UPDATING.md`** — plain-language guide for the student: how to add a paper, update bio, add a blog post, change their photo. Written for someone who edits files on GitHub in the browser.
 22. **Blog content** (if provided) — each post as `content/blog/slug/index.md`
+23. **`static/robots.txt`** — allows all crawlers, `https://` Sitemap line, comment pointing to `/llms.txt` (per "AI & Search Visibility")
+24. **`static/llms.txt`** — the short AI-agent welcome file (per "AI & Search Visibility")
 
-**The site must build cleanly with `hugo --gc --minify` and deploy correctly to GitHub Pages on first push.**
+**The site must build cleanly with `hugo --gc --minify` and deploy correctly to GitHub Pages on first push. `baseURL` must be the final `https://` URL, and every sitemap entry must inherit it.**
 
 ---
 
