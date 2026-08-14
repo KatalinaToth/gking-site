@@ -1,0 +1,27 @@
+{{/* Return machine-readable link metadata for a publication/talk page:
+     a dict with "pdf" (absolute URL or "") and "doi" (bare DOI or "").
+     Same resolution rules as gk-scholarly-meta.html: a schemeless PDF path
+     is first tried as a page-bundle resource, else resolved against the
+     site root (front matter says "files/x.pdf"; files live at /files/x.pdf).
+     Usage: partial "functions/gk_pub_meta" $page */}}
+{{- $page := . -}}
+{{- $pdf := "" -}}
+{{- $doi := "" -}}
+{{- range $page.Params.links -}}
+  {{- $u := .url | default "" -}}
+  {{- if and (eq (.type | default "") "pdf") (not $pdf) $u -}}
+    {{- if hasPrefix $u "http" -}}
+      {{- $pdf = $u -}}
+    {{- else -}}
+      {{- with $page.Resources.GetMatch $u -}}
+        {{- $pdf = .Permalink -}}
+      {{- else -}}
+        {{- $pdf = strings.TrimPrefix "/" $u | absURL -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if and (not $doi) (in $u "doi.org/") -}}
+    {{- $doi = index (split $u "doi.org/") 1 -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "pdf" $pdf "doi" $doi) -}}

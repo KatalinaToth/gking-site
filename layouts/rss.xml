@@ -1,0 +1,44 @@
+{{- /* Site override of the theme's RSS template (blox-tailwind/layouts/rss.xml).
+
+     The theme fills <description> with full page HTML (.Content), which is
+     empty for publications (their abstract lives in front matter, not the
+     body) and bloats the home feed with entire rendered pages. This version
+     emits a plain-text abstract-or-summary per item plus authors via
+     dc:creator, so feed readers and AI crawlers get real content at a sane
+     size. */ -}}
+{{- $page_context := cond .IsHome site . -}}
+{{- $pages := $page_context.RegularPages -}}
+{{- $limit := site.Config.Services.RSS.Limit -}}
+{{- if ge $limit 1 -}}
+  {{- $pages = $pages | first $limit -}}
+{{- end -}}
+{{- printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\" ?>" | safeHTML }}
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>{{ if ne .Title site.Title }}{{ with .Title }}{{.}} | {{ end }}{{end}}{{ site.Title }}</title>
+    <link>{{ .Permalink }}</link>
+    {{- with .OutputFormats.Get "RSS" }}
+      {{ printf "<atom:link href=%q rel=\"self\" type=%q />" .Permalink .MediaType | safeHTML }}
+    {{ end -}}
+    <description>{{ .Title | default site.Title }}</description>
+    <generator>Hugo</generator>
+    {{- with site.LanguageCode }}<language>{{.}}</language>{{end -}}
+    {{- with site.Copyright }}<copyright>{{ replace (replace . "{year}" now.Year) "&copy;" "©" | plainify }}</copyright>{{end -}}
+    {{- if not .Date.IsZero }}<lastBuildDate>{{ .Date.Format "Mon, 02 Jan 2006 15:04:05 -0700" | safeHTML }}</lastBuildDate>{{ end -}}
+    {{ range $pages }}
+    <item>
+      <title>{{ .Title }}</title>
+      <link>{{ .Permalink }}</link>
+      <pubDate>{{ .Date.Format "Mon, 02 Jan 2006 15:04:05 -0700" | safeHTML }}</pubDate>
+      <guid>{{ .Permalink }}</guid>
+      {{- range .Params.authors }}
+      <dc:creator>{{ . }}</dc:creator>
+      {{- end }}
+      {{- $desc := "" -}}
+      {{- with .Params.abstract }}{{ $desc = . | markdownify | plainify | htmlUnescape | chomp }}{{ end -}}
+      {{- if not $desc }}{{ $desc = .Summary | plainify | htmlUnescape | chomp }}{{ end }}
+      <description>{{ $desc }}</description>
+    </item>
+    {{ end }}
+  </channel>
+</rss>

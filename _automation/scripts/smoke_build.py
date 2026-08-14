@@ -107,6 +107,89 @@ def check_required_files(public: Path, errors: list[str]) -> None:
             errors.append(f"missing output file: {rel}")
 
 
+def check_sitemap(public: Path, errors: list[str]) -> None:
+    """Sitemap must exist, parse, stay https-only, and never advertise
+    robots-disallowed /authors/ pages (regressions of the 2026-08 AI
+    visibility fixes)."""
+    import xml.etree.ElementTree as ET
+
+    path = public / "sitemap.xml"
+    if not path.is_file():
+        errors.append("sitemap.xml missing from build output")
+        return
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError as exc:
+        errors.append(f"sitemap.xml is not well-formed XML: {exc}")
+        return
+    ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+    locs = [el.text or "" for el in root.iter(f"{ns}loc")]
+    if len(locs) < 800:
+        errors.append(f"sitemap.xml has {len(locs)} URLs (expected >= 800)")
+    bad_scheme = [u for u in locs if not u.startswith("https://")]
+    if bad_scheme:
+        errors.append(
+            f"sitemap.xml has {len(bad_scheme)} non-https URLs, e.g. {bad_scheme[0]}"
+        )
+    authors = [u for u in locs if "/authors/" in u]
+    if authors:
+        errors.append(
+            f"sitemap.xml advertises {len(authors)} robots-disallowed /authors/ pages"
+        )
+
+
+def check_machine_readable(public: Path, errors: list[str]) -> None:
+    """Crawler/AI-facing surfaces: scholarly metadata on paper pages, the
+    Person block on the homepage, and the corpus map / JSON catalog."""
+    import json
+
+    # Count real paper pages carrying scholarly metadata (redirect stubs for
+    # papers that moved to custom URLs legitimately lack it).
+    tagged = 0
+    pub_dir = public / "publication"
+    if pub_dir.is_dir():
+        for candidate in pub_dir.iterdir():
+            page = candidate / "index.html"
+            if not page.is_file():
+                continue
+            text = page.read_text(encoding="utf-8", errors="replace")
+            if "citation_title" in text and "application/ld+json" in text:
+                tagged += 1
+    if tagged < 200:
+        errors.append(
+            f"only {tagged} publication pages carry citation_*/JSON-LD metadata "
+            "(expected >= 200)"
+        )
+
+    home = public / "index.html"
+    if home.is_file():
+        text = home.read_text(encoding="utf-8", errors="replace")
+        if '"@type":"Person"' not in text:
+            errors.append("homepage lacks the Person JSON-LD block")
+
+    corpus = public / "llms-full.txt"
+    if not corpus.is_file():
+        errors.append("llms-full.txt missing from build output")
+    else:
+        entries = corpus.read_text(encoding="utf-8", errors="replace").count("\n- ")
+        if entries < 300:
+            errors.append(f"llms-full.txt has {entries} entries (expected >= 300)")
+
+    catalog = public / "publication" / "index.json"
+    if not catalog.is_file():
+        errors.append("publication/index.json missing from build output")
+    else:
+        try:
+            items = json.loads(catalog.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            errors.append(f"publication/index.json is not valid JSON: {exc}")
+        else:
+            if not isinstance(items, list) or len(items) < 250:
+                errors.append(
+                    f"publication/index.json has {len(items)} entries (expected >= 250)"
+                )
+
+
 def check_html_snippets(public: Path, errors: list[str]) -> None:
     for rel, needle in HTML_SNIPPETS:
         path = public / rel
@@ -145,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
         check_page_counts(public, errors)
         check_required_files(public, errors)
         check_html_snippets(public, errors)
+        check_sitemap(public, errors)
+        check_machine_readable(public, errors)
 
     if errors:
         print("[smoke_build] FAILED:", file=sys.stderr)

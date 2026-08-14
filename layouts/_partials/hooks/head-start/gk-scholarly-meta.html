@@ -65,8 +65,8 @@
         "url" .Permalink -}}
   {{- with $authors }}{{ $article = merge $article (dict "author" .) }}{{ end -}}
   {{- with .Date }}{{ $article = merge $article (dict "datePublished" (.Format "2006-01-02")) }}{{ end -}}
-  {{- with .Params.abstract }}{{ $article = merge $article (dict "abstract" (. | markdownify | plainify | chomp)) }}{{ end -}}
-  {{- with .Params.publication }}{{ $article = merge $article (dict "isPartOf" (dict "@type" "CreativeWork" "name" (. | markdownify | plainify | chomp))) }}{{ end -}}
+  {{- with .Params.abstract }}{{ $article = merge $article (dict "abstract" (. | markdownify | plainify | htmlUnescape | chomp)) }}{{ end -}}
+  {{- with .Params.publication }}{{ $article = merge $article (dict "isPartOf" (dict "@type" "CreativeWork" "name" (. | markdownify | plainify | htmlUnescape | chomp))) }}{{ end -}}
   {{- with $doi }}{{ $article = merge $article (dict "identifier" . "sameAs" (printf "https://doi.org/%s" .)) }}{{ end -}}
   <script type="application/ld+json">{{ $article | jsonify | safeJS }}</script>
 {{- end -}}

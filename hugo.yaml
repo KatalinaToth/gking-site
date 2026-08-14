@@ -160,11 +160,28 @@ imaging:
   quality: 75
   anchor: smart
 
+# Machine-readable outputs for crawlers and AI agents (nothing links to
+# these; they change no visible page):
+#   pubcatalog — /publication/index.json, one JSON array of all papers
+#                (enabled via `outputs` in the publication section's _index.md)
+#   llmsfull   — /llms-full.txt, plain-text corpus map of papers + talks,
+#                linked from /llms.txt
+outputFormats:
+  pubcatalog:
+    mediaType: application/json
+    baseName: index
+    isPlainText: true
+  llmsfull:
+    mediaType: text/plain
+    baseName: llms-full
+    isPlainText: true
+
 outputs:
   home:
     - HTML
     - RSS
     - JSON
+    - llmsfull
 
 params:
   appearance:
