@@ -205,6 +205,47 @@ def check_html_snippets(public: Path, errors: list[str]) -> None:
             errors.append(f"{rel} does not contain expected text: {needle!r}")
 
 
+def check_redirect_targets(public: Path, errors: list[str]) -> None:
+    """Every internal redirect target in redirects.yaml must exist in the
+    built site. On Cloudflare Pages internal redirects are 200 rewrites, so
+    a redirect pointing at a missing page silently serves a 404 — exactly
+    the bug behind ~95 of the Search Console 404s found 2026-08-19."""
+    try:
+        import yaml
+    except ImportError:
+        errors.append("PyYAML unavailable; cannot validate redirect targets")
+        return
+
+    data_file = ROOT / "EditMe" / "Redirects" / "Data" / "redirects.yaml"
+    if not data_file.is_file():
+        return
+    doc = yaml.safe_load(data_file.read_text(encoding="utf-8")) or {}
+    broken = []
+    for entry in doc.get("redirects", []):
+        target = str(entry.get("to", "")).strip()
+        if target.startswith(("http://", "https://")):
+            continue
+        rel = target.split("#")[0].split("?")[0].strip("/")
+        if not rel:
+            continue
+        if not ((public / rel / "index.html").is_file() or (public / rel).is_file()):
+            broken.append(f"/{entry.get('from')} -> {target}")
+    for wc in doc.get("wildcards", []):
+        target = str(wc.get("to", "")).strip()
+        if target.startswith(("http://", "https://")) or ":splat" in target:
+            continue
+        rel = target.strip("/")
+        if rel and not (public / rel / "index.html").is_file():
+            broken.append(f"/{wc.get('from')} -> {target}")
+    if broken:
+        errors.append(
+            f"{len(broken)} redirect target(s) missing from the built site, "
+            f"e.g. {broken[0]}"
+        )
+        for b in broken[:20]:
+            errors.append(f"    broken redirect: {b}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -230,6 +271,7 @@ def main(argv: list[str] | None = None) -> int:
         check_html_snippets(public, errors)
         check_sitemap(public, errors)
         check_machine_readable(public, errors)
+        check_redirect_targets(public, errors)
 
     if errors:
         print("[smoke_build] FAILED:", file=sys.stderr)

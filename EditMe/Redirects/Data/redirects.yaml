@@ -1060,67 +1060,67 @@ redirects:
     to:   "/talk/the-balance-sample-size-frontier-in-matching-methods-for-causal-inference/"
 
   - from: "presentations/big-data-not-about-data"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-0"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-1"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-10"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-11"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-12"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-13"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-14"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-15"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-16"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-17"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-18"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-19"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-2"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-3"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-4"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-5"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-6"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-7"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-8"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-9"
-    to:   "/talk/big-data-is-not-about-the-data-2013-269/"
+    to:   "/talk/big-data-is-not-about-the-data/"
 
   - from: "presentations/big-data-not-about-data-applications"
     to:   "/talk/big-data-is-not-about-the-data-with-applications/"
@@ -1150,13 +1150,13 @@ redirects:
     to:   "/talk/computer-assisted-clustering-and-conceptualization/"
 
   - from: "presentations/computer-assisted-clustering-and-conceptualization-unstructured-text"
-    to:   "/talk/computer-assisted-clustering-and-conceptualization-from-unstructured-text-2011/"
+    to:   "/talk/computer-assisted-clustering-and-conceptualization-from-unstructured-text/"
 
   - from: "presentations/computer-assisted-conceptualization"
-    to:   "/talk/computer-assisted-conceptualization-2011/"
+    to:   "/talk/computer-assisted-conceptualization/"
 
   - from: "presentations/computer-assisted-conceptualization-0"
-    to:   "/talk/computer-assisted-conceptualization-2011/"
+    to:   "/talk/computer-assisted-conceptualization/"
 
   - from: "presentations/computer-assisted-reading-and-other-discoveries-quantitative-social-science"
     to:   "/talk/computer-assisted-reading-and-other-discoveries-from-quantitative-social-science/"
@@ -1168,13 +1168,13 @@ redirects:
     to:   "/talk/correcting-measurement-error-bias-in-conjoint-survey-experiments-stanford-university/"
 
   - from: "presentations/dataverse-network-infrastructure-data-sharing"
-    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing-2008-380/"
+    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/dataverse-network-infrastructure-data-sharing-0"
-    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing-2008-380/"
+    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/dataverse-network-infrastructure-data-sharing-1"
-    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing-2008-380/"
+    to:   "/talk/the-dataverse-network-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/dataverse-sharing-research-data-building-social-science"
     to:   "/talk/dataverse-sharing-research-data-building-social-science/"
@@ -1183,22 +1183,22 @@ redirects:
     to:   "/talk/death-by-survey-estimating-adult-mortality-without-selection-bias-from-sibling-survival-data/"
 
   - from: "presentations/demographic-forecasting"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-0"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-1"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-2"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-3"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-4"
-    to:   "/talk/demographic-forecasting-2005/"
+    to:   "/talk/demographic-forecasting/"
 
   - from: "presentations/demographic-forecasting-incorporating-qualitative-insight-quantitative-modeling"
     to:   "/talk/demographic-forecasting-incorporating-qualitative-insight-into-quantitative-modeling/"
@@ -1369,37 +1369,37 @@ redirects:
     to:   "/talk/how-the-news-media-activate-public-expression-and-influence-national-agendas/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-0"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-1"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-2"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-3"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-4"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-5"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-6"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-7"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-8"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/how-read-100-million-blogs-classify-deaths-without-physicians-9"
-    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians-2008/"
+    to:   "/talk/how-to-read-100-million-blogs-classify-deaths-without-physicians/"
 
   - from: "presentations/improved-method-automated-nonparametric-content-analysis-social-science"
     to:   "/talk/an-improved-method-of-automated-nonparametric-content-analysis-for-social-science/"
@@ -1414,13 +1414,13 @@ redirects:
     to:   "/talk/interpersonal-and-cross-cultural-incomparability-in-survey-research-in-honor-of-dean-barry-bloom/"
 
   - from: "presentations/introduction-dataverse-network-infrastructure-data-sharing"
-    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing-2007-403/"
+    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/introduction-dataverse-network-infrastructure-data-sharing-0"
-    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing-2007-403/"
+    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/introduction-dataverse-network-infrastructure-data-sharing-1"
-    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing-2007-403/"
+    to:   "/talk/an-introduction-to-the-dataverse-network-as-an-infrastructure-for-data-sharing/"
 
   - from: "presentations/introduction-matching-causal-inference"
     to:   "/talk/introduction-to-matching-for-causal-inference/"
@@ -1441,19 +1441,19 @@ redirects:
     to:   "/talk/matching-for-causal-inference-without-balance-checking/"
 
   - from: "presentations/matching-methods-causal-inference"
-    to:   "/talk/matching-methods-for-causal-inference-2012/"
+    to:   "/talk/matching-methods-for-causal-inference/"
 
   - from: "presentations/matching-methods-causal-inference-0"
-    to:   "/talk/matching-methods-for-causal-inference-2012/"
+    to:   "/talk/matching-methods-for-causal-inference/"
 
   - from: "presentations/matching-methods-causal-inference-1"
-    to:   "/talk/matching-methods-for-causal-inference-2012/"
+    to:   "/talk/matching-methods-for-causal-inference/"
 
   - from: "presentations/matching-methods-causal-inference-2"
-    to:   "/talk/matching-methods-for-causal-inference-2012/"
+    to:   "/talk/matching-methods-for-causal-inference/"
 
   - from: "presentations/matching-methods-causal-inference-3"
-    to:   "/talk/matching-methods-for-causal-inference-2012/"
+    to:   "/talk/matching-methods-for-causal-inference/"
 
   - from: "presentations/matching-methods-causal-inference-and-21-other-topics"
     to:   "/talk/matching-methods-for-causal-inference-and-21-other-topics/"
@@ -1549,76 +1549,76 @@ redirects:
     to:   "/talk/remaking-the-social-sciences/"
 
   - from: "presentations/reverse-engineering-censorship-china"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-0"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-1"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-2"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-3"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-4"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-5"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-6"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-7"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-censorship-china-8"
-    to:   "/talk/reverse-engineering-censorship-in-china-2015-211/"
+    to:   "/talk/reverse-engineering-censorship-in-china/"
 
   - from: "presentations/reverse-engineering-chinese-censorship"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-0"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-1"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-2"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-3"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-4"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-5"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-6"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-7"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-censorship-8"
-    to:   "/talk/reverse-engineering-chinese-censorship-2013-258/"
+    to:   "/talk/reverse-engineering-chinese-censorship/"
 
   - from: "presentations/reverse-engineering-chinese-government-information-controls-0"
-    to:   "/talk/reverse-engineering-chinese-government-information-controls-2017/"
+    to:   "/talk/reverse-engineering-chinese-government-information-controls/"
 
   - from: "presentations/reverse-engineering-chinese-government-information-controls-1"
-    to:   "/talk/reverse-engineering-chinese-government-information-controls-2017/"
+    to:   "/talk/reverse-engineering-chinese-government-information-controls/"
 
   - from: "presentations/reverse-engineering-chinese-government-information-controls-2"
-    to:   "/talk/reverse-engineering-chinese-government-information-controls-2017/"
+    to:   "/talk/reverse-engineering-chinese-government-information-controls/"
 
   - from: "presentations/reverse-engineering-chinese-government-information-controls-3"
-    to:   "/talk/reverse-engineering-chinese-government-information-controls-2017/"
+    to:   "/talk/reverse-engineering-chinese-government-information-controls/"
 
   - from: "presentations/reverse-engineering-chinese-government-information-controls-hebrew-university"
     to:   "/talk/reverse-engineering-chinese-government-information-controls-harvard-university/"
@@ -1639,55 +1639,55 @@ redirects:
     to:   "/talk/sequential-experiments-and-news-media-effects/"
 
   - from: "presentations/simplifying-casual-inference"
-    to:   "/talk/simplifying-causal-inference-2013/"
+    to:   "/talk/simplifying-causal-inference/"
 
   - from: "presentations/simplifying-causal-inference"
-    to:   "/talk/simplifying-causal-inference-2013/"
+    to:   "/talk/simplifying-causal-inference/"
 
   - from: "presentations/simplifying-causal-inference-0"
-    to:   "/talk/simplifying-causal-inference-2013/"
+    to:   "/talk/simplifying-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-0"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-1"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-10"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-11"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-12"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-2"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-3"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-4"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-5"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-6"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-7"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-8"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-9"
-    to:   "/talk/simplifying-matching-methods-for-causal-inference-2017-146/"
+    to:   "/talk/simplifying-matching-methods-for-causal-inference/"
 
   - from: "presentations/simplifying-matching-methods-causal-inference-hebrew-university-jerusalem"
     to:   "/talk/simplifying-matching-methods-for-causal-inference-hebrew-university-of-jerusalem/"
@@ -1699,10 +1699,10 @@ redirects:
     to:   "/talk/simplifying-matching-methods-for-causal-inference-university-of-wisconsin-at-madison/"
 
   - from: "presentations/social-science-data-revolution"
-    to:   "/talk/the-social-science-data-revolution-2011/"
+    to:   "/talk/the-social-science-data-revolution/"
 
   - from: "presentations/social-science-data-revolution-0"
-    to:   "/talk/the-social-science-data-revolution-2011/"
+    to:   "/talk/the-social-science-data-revolution/"
 
   - from: "presentations/solving-data-sharing-challenges-technologically-through-differential-privacy"
     to:   "/talk/solving-data-sharing-challenges-technologically-through-differential-privacy-wesleyan-university/"
@@ -2079,3 +2079,189 @@ redirects:
   - from: "unify"
     to:   "/publication/unifying-political-methodology-the-likelihood-theory-of-statistical-inference/"
     note: "legacy-url rescue 2026-07-13 (manual)"
+
+  # -------------------------------------------------------------------------
+  # Legacy-URL rescues from the Google Search Console 404 export of
+  # 2026-08-19: old Drupal URLs still being crawled that map cleanly to a
+  # current page. Old slugs dropped stopwords (the/of/for/...) and sometimes
+  # kept mixed case, so `from` values look odd on purpose.
+  # -------------------------------------------------------------------------
+  - from: "biocv"
+    to:   "/bio/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): old bio+CV page"
+  - from: "presentations"
+    to:   "/talk/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): old talks listing"
+  - from: "publications/10-Million-International-Dyadic-Events"
+    to:   "/publication/10-million-international-dyadic-events/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/balance-Sample-Size-Frontier-Matching-Methods-Causal-Inference"
+    to:   "/publication/the-balance-sample-size-frontier-in-matching-methods-for-causal-inference/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/boocio-education-system-hierarchical-concept-maps-0"
+    to:   "/publication/boocio-an-education-system-with-hierarchical-concept-maps/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/brief-amici-curiae-professors-"
+    to:   "/publication/brief-of-amici-curiae-professors-gary-king-bernard-grofman-andrew-gelman-and-jonathan-katz-in-support-of-neither-party/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/calculating-Standard-Errors-Predicted-Values-Based-Nonlinear-Functional-Forms"
+    to:   "/publication/calculating-standard-errors-of-predicted-values-based-on-nonlinear-functional-forms/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/cem-coarsened-exact-matching-softwarex"
+    to:   "/publication/cem-coarsened-exact-matching-software/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): SoftwareX paper"
+  - from: "publications/clarify-software-interpreting-and-presenting-statistical-results"
+    to:   "/publication/clarify-software-for-interpreting-and-presenting-statistical-results/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/compactness-r-package-measuring-legislative-district-compactness-if-you-only-know"
+    to:   "/publication/compactness-an-r-package-for-measuring-legislative-district-compactness-if-you-only-know-it-when-you-see-it/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/comparative-Effectiveness-Matching-Methods-Causal-Inference"
+    to:   "/publication/comparative-effectiveness-of-matching-methods-for-causal-inference/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/dataverse-open-source-research-data-repository-software"
+    to:   "/publication/dataverse-open-source-research-data-repository-software/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/ei-program-ecological-inference-0"
+    to:   "/software/ei-a-program-for-ecological-inference/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/evaluating-impacts-swapping-us-decennial-census"
+    to:   "/publication/evaluating-the-impacts-of-swapping-on-the-us-decennial-census/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/ezi-easy-program-ecological-inference"
+    to:   "/publication/ezi-an-easy-program-for-ecological-inference/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/how-Robust-Standard-Errors-Expose-Methodological-Problems-They-Do-Not-Fix"
+    to:   "/publication/how-robust-standard-errors-expose-methodological-problems-they-do-not-fix-and-what-to-do-about-it/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/how-censorship-china-allows-government-criticism-silences-"
+    to:   "/publication/how-censorship-in-china-allows-government-criticism-but-silences-collective-expression/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/how-censorship-china-allows-government-criticism-silences-collective"
+    to:   "/publication/how-censorship-in-china-allows-government-criticism-but-silences-collective-expression/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/how-censorship-china-allows-government-criticism-silences-collective-"
+    to:   "/publication/how-censorship-in-china-allows-government-criticism-but-silences-collective-expression/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/how-censorship-china-allowsgovernment-criticism-silences-collective-expression"
+    to:   "/publication/how-censorship-in-china-allows-government-criticism-but-silences-collective-expression/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): typo'd old slug"
+  - from: "publications/judgeit-ii-program-evaluating-electoral-systems-and-redistricting-plans"
+    to:   "/publication/judgeit-ii-a-program-for-evaluating-electoral-systems-and-redistricting-plans/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/learning-catalytics-acquired-pearson"
+    to:   "/startups/learning-catalytics/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/letter-Editor-Mccall-And-Cromwell"
+    to:   "/publication/letter-to-the-editor-on-the-medicare-health-support-pilot-program-by-mccall-and-cromwell/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/letter-editor-mccall-and-cromwell"
+    to:   "/publication/letter-to-the-editor-on-the-medicare-health-support-pilot-program-by-mccall-and-cromwell/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/matchingfrontier-r-package-calculating-balance-sample-size-frontier"
+    to:   "/publication/matchingfrontier-r-package-for-calculating-the-balance-sample-size-frontier/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/matchit-nonparametric-preprocessing-parametric-causal-inference"
+    to:   "/publication/matchit-nonparametric-preprocessing-for-parametric-causal-inference/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/multiple-overimputation-unified-approach-measurement-error-and-missing-data"
+    to:   "/publication/a-unified-approach-to-measurement-error-and-missing-data-overview-and-applications/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/opendp-developing-open-source-tools-differential-privacy"
+    to:   "/publication/opendp-developing-open-source-tools-for-differential-privacy/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/openscholar"
+    to:   "/publication/openscholar/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/perusall"
+    to:   "/publication/perusall/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/perusall-0"
+    to:   "/publication/perusall/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/presidency-American-Politics"
+    to:   "/publication/the-presidency-in-american-politics/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/privacyunbiased"
+    to:   "/publication/privacyunbiased/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/quickcode"
+    to:   "/publication/quickcode/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/readme-software-automated-content-analysis"
+    to:   "/publication/readme-software-for-automated-content-analysis/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/readme2-improved-method-automated-nonparametric-content-analysis-social-science"
+    to:   "/publication/readme2-an-r-package-for-improved-automated-nonparametric-content-analysis-for-social-science/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/relogit-rare-events-logistic-regression-0"
+    to:   "/publication/relogit-rare-events-logistic-regression/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/robustse"
+    to:   "/publication/robustse/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/statistical-Security-Social-Security"
+    to:   "/publication/statistical-security-for-social-security/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/thresher"
+    to:   "/startups/thresher/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/troubled-future-colleges-and-universities"
+    to:   "/publication/the-troubled-future-of-colleges-and-universities-with-comments-from-five-scholar-administrators/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/unbiasedprivacy"
+    to:   "/publication/unbiasedprivacy/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/va-verbal-autopsies"
+    to:   "/publication/va-verbal-autopsies/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/virtual-data-center"
+    to:   "/publication/an-overview-of-the-virtual-data-center-project-and-software/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/whatifJSS"
+    to:   "/publication/whatif-software-for-evaluating-counterfactuals/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/why-Propensity-Scores-Should-"
+    to:   "/publication/why-propensity-scores-should-not-be-used-for-matching/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/why-Propensity-Scores-Should-Not-Be-Used-"
+    to:   "/publication/why-propensity-scores-should-not-be-used-for-matching/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export): truncated old slug"
+  - from: "publications/you-Lie-Patterns-Partisan-Taunting-Us-Senate-Poster"
+    to:   "/publication/you-lie-patterns-of-partisan-taunting-in-the-u.s.-senate-poster/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "publications/zelig-everyones-statistical-software"
+    to:   "/publication/zelig-everyones-statistical-software/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "presentations/empowering-social-science-understand-and-ameliorate-major-challenges-human"
+    to:   "/talk/empowering-social-science-to-understand-and-ameliorate-major-challenges-of-human-society-federal-interagency-conference-on-social-science-and-big-data/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "presentations/how-science-works-and-some-advice-you-and-me-nuffield-college-oxford-university"
+    to:   "/talk/how-science-works-and-some-advice-for-you-and-for-me-department-of-politics-and-international-relations-oxford-university/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+  - from: "presentations/reverse-engineering-chinese-government-information-controls"
+    to:   "/talk/reverse-engineering-chinese-government-information-controls/"
+    note: "legacy-url rescue 2026-08-19 (GSC 404 export)"
+
+# ---------------------------------------------------------------------------
+# Wildcard redirects
+# ---------------------------------------------------------------------------
+# Pattern rules for whole legacy URL trees. These go only into the
+# `_redirects` file (honoured by Cloudflare Pages, which serves the live
+# site) — no per-URL stub pages are generated, so the GitHub Pages backup
+# still 404s on them. `:splat` stands for whatever the `*` matched.
+#
+# The old Drupal site served every uploaded file from
+# /files/gking/files/<name> (and OpenScholar before it from
+# /sites/scholar.harvard.edu/files/gking/files/<name>). The same files now
+# live flat under /files/<name>, so both trees redirect there.
+wildcards:
+  - from: "files/gking/files/*"
+    to:   "/files/:splat"
+    note: "old Drupal file tree -> current flat /files/ (GSC 404 export 2026-08-19)"
+  - from: "sites/scholar.harvard.edu/files/gking/files/*"
+    to:   "/files/:splat"
+    note: "OpenScholar-era file tree -> current flat /files/ (GSC 404 export 2026-08-19)"
+  - from: "vign/*"
+    to:   "/software/anchors-software-for-anchoring-vignettes-data/"
+    note: "retired anchoring-vignettes mini-site (GSC 404 export 2026-08-19)"

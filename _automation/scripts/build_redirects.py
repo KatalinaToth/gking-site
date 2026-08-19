@@ -129,13 +129,14 @@ def yaml_quote(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def load_entries() -> list[dict]:
+def load_entries() -> tuple[list[dict], list[dict]]:
+    """Return (redirect entries, wildcard entries) from redirects.yaml."""
     if not DATA_FILE.exists():
         print(
             f"[build_redirects] {DATA_FILE.relative_to(ROOT)} not found; "
             f"nothing to do."
         )
-        return []
+        return [], []
     with DATA_FILE.open() as f:
         doc = yaml.safe_load(f) or {}
     entries = doc.get("redirects", doc if isinstance(doc, list) else []) or []
@@ -146,7 +147,10 @@ def load_entries() -> list[dict]:
         if not isinstance(raw, dict):
             die(f"Every entry must be a mapping; got {raw!r}.")
         cleaned.append(raw)
-    return cleaned
+    wildcards = doc.get("wildcards", []) if isinstance(doc, dict) else []
+    if not isinstance(wildcards, list):
+        die("`wildcards:` must be a YAML list.")
+    return cleaned, wildcards
 
 
 def parse_status(raw, slug: str) -> int:
@@ -172,7 +176,44 @@ def _is_external(url: str) -> bool:
     return url.startswith("http://") or url.startswith("https://")
 
 
-def write_netlify_redirects(rules: list[tuple[str, str, int]]) -> None:
+def load_wildcards(doc_entries) -> list[tuple[str, str, int]]:
+    """Validate the optional `wildcards:` list from redirects.yaml.
+
+    Each entry is `{ from: "path/prefix/*", to: "/target/:splat", status: 301 }`.
+    These become splat rules in the `_redirects` file (honoured by Cloudflare
+    Pages, which serves the live site). No meta-refresh stubs are generated —
+    a wildcard has no enumerable stub pages — so the GitHub Pages backup
+    still 404s on these; that's acceptable for a backup host.
+
+    Unlike explicit internal redirects (which use 200 rewrites so short URLs
+    stay in the address bar), wildcards always emit their real 3xx status:
+    they exist to tell crawlers a legacy URL has permanently moved.
+    """
+    rules: list[tuple[str, str, int]] = []
+    for entry in doc_entries:
+        if not isinstance(entry, dict):
+            die(f"Every `wildcards:` entry must be a mapping; got {entry!r}.")
+        raw_from = str(entry.get("from", "")).strip()
+        target = str(entry.get("to", "")).strip()
+        if not raw_from.endswith("/*"):
+            die(f"Wildcard `from: {raw_from!r}` must end with `/*`.")
+        prefix = parse_path(raw_from[:-2], source_label="wildcards.from")
+        if not target:
+            die(f"Wildcard `from: /{prefix}/*` is missing its `to` value.")
+        if not (_is_external(target) or target.startswith("/")):
+            die(
+                f"Wildcard `from: /{prefix}/*` target must be an absolute "
+                f"path or full URL; got {target!r}."
+            )
+        status = parse_status(entry.get("status"), f"{prefix}/*")
+        rules.append((prefix, target, status))
+    return rules
+
+
+def write_netlify_redirects(
+    rules: list[tuple[str, str, int]],
+    wildcard_rules: list[tuple[str, str, int]] | None = None,
+) -> None:
     """Write a Netlify/Cloudflare-Pages style `_redirects` file.
 
     GitHub Pages ignores this file, but emitting it keeps the redirect
@@ -185,8 +226,9 @@ def write_netlify_redirects(rules: list[tuple[str, str, int]]) -> None:
     by scripts/apply_rewrites.py for GitHub Pages.  External targets
     keep their configured 3xx status.
     """
+    wildcard_rules = wildcard_rules or []
     NETLIFY_REDIRECTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    if not rules:
+    if not rules and not wildcard_rules:
         if NETLIFY_REDIRECTS_FILE.exists():
             NETLIFY_REDIRECTS_FILE.unlink()
         return
@@ -204,6 +246,13 @@ def write_netlify_redirects(rules: list[tuple[str, str, int]]) -> None:
         effective = 200 if not _is_external(target) else status
         lines.append(f"/{path}/   {target}   {effective}")
         lines.append(f"/{path}    {target}   {effective}")
+    if wildcard_rules:
+        lines.append("")
+        lines.append("# Wildcard rules (from `wildcards:` in redirects.yaml). Cloudflare")
+        lines.append("# Pages matches explicit rules above before these splats. Real 3xx")
+        lines.append("# statuses on purpose: these mark legacy URL trees as moved.")
+        for prefix, target, status in wildcard_rules:
+            lines.append(f"/{prefix}/*   {target}   {status}")
     NETLIFY_REDIRECTS_FILE.write_text("\n".join(lines) + "\n")
 
 
@@ -240,8 +289,9 @@ def ensure_intermediate_index(parent: Path) -> None:
 def main() -> int:
     if OUT_DIR.exists():
         shutil.rmtree(OUT_DIR)
-    entries = load_entries()
-    if not entries:
+    entries, wildcard_entries = load_entries()
+    wildcard_rules = load_wildcards(wildcard_entries)
+    if not entries and not wildcard_rules:
         write_netlify_redirects([])
         print("[build_redirects] no redirects defined; nothing to do.")
         return 0
@@ -333,9 +383,10 @@ build:
 """
         )
 
-    write_netlify_redirects(netlify_rules)
+    write_netlify_redirects(netlify_rules, wildcard_rules)
     print(
-        f"[build_redirects] generated {len(seen)} redirect stub(s) in "
+        f"[build_redirects] generated {len(seen)} redirect stub(s) and "
+        f"{len(wildcard_rules)} wildcard rule(s) in "
         f"{OUT_DIR.relative_to(ROOT)} and {NETLIFY_REDIRECTS_FILE.relative_to(ROOT)}"
     )
     return 0
