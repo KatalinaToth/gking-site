@@ -199,24 +199,63 @@ html.dark .dark\:prose-invert { --tw-prose-body: #374151 !important; --tw-prose-
   margin-bottom: 1.25em;
 }
 
-/* Gov 2020 teaching page: single line between meta card and body list */
-main.gk-gov2020-teaching-spacing .hwp-class-details {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+/* Gov 2020 course page */
+.gk-gov2020 .prose {
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
-main.gk-gov2020-teaching-spacing .hwp-class-details > .hwp-container-px {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+.gk-gov2020 .prose p,
+.gk-gov2020 .prose li {
+  margin-top: 0.55em;
+  margin-bottom: 0.55em;
 }
-main.gk-gov2020-teaching-spacing .hwp-class-details .class-card {
-  margin-bottom: 0 !important;
+.gk-gov2020 .prose ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.7em;
 }
-main.gk-gov2020-teaching-spacing .hwp-class--main-content {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+.gk-gov2020-hero {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) minmax(0, 1fr);
+  gap: 0.65rem 1rem;
+  align-items: start;
+  margin: 0 0 0.65rem;
 }
-main.gk-gov2020-teaching-spacing .hwp-class--main-content .hwp-text-block > p:first-child {
-  margin-top: 0 !important;
+.prose .gk-gov2020-hero img,
+.gk-gov2020-hero img {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+.gk-gov2020-when {
+  margin: 0 0 0.35rem !important;
+  color: #64748b;
+  font-size: 0.9rem !important;
+}
+.gk-gov2020-sublinks {
+  display: block;
+  margin: 0;
+  padding-left: 2em;
+  text-indent: 0;
+}
+.gk-gov2020-para {
+  font-weight: 700;
+  margin-right: 0.25em;
+}
+.gk-gov2020-fn {
+  margin-top: 0.85rem !important;
+  padding-top: 0.55rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.88em;
+}
+@media (max-width: 640px) {
+  .gk-gov2020-hero {
+    grid-template-columns: 1fr;
+  }
+  .gk-gov2020-hero img {
+    max-width: 160px;
+  }
 }
 
 /* Better hero section spacing */
