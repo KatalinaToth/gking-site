@@ -912,8 +912,30 @@ button.gk-cite-button:focus-visible {
    columns side-by-side on phones, squeezing the address into a ~3-words-per-
    line sliver. Collapse it to a single column (details, then photo) below
    640px. Desktop (>=641px) is untouched. */
+/* =========================================================================
+   PHONE PAGE GUTTERS
+   Section templates use 5rem (80px) left/right padding, which is right on a
+   computer and leaves only ~215px of content on a 375px phone. Everything
+   below is gated at 640px so viewports 641px and wider (every laptop/desktop
+   this site is designed for) are unchanged. Matches the homepage rule.
+   ========================================================================= */
 @media (max-width: 640px) {
   .gk-contact-grid {
     grid-template-columns: 1fr !important;
+  }
+  .gk-page {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+  }
+  .gk-teaching-cards {
+    grid-template-columns: 1fr !important;
+  }
+  .gk-page iframe {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .gk-tab {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
