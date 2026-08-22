@@ -2,14 +2,140 @@
 <style>
   .page-body.my-10 { margin: 0 !important; padding: 0 !important; }
 
+  .gk-shell {
+    display: flex; align-items: stretch;
+    /* Fallback only. --navbar-height is 72px but the real header stack is
+       taller (the Harvard bar sits above the site nav), so this constant
+       pushes the bottom of the column ~49px below the fold on every viewport
+       height. sizeShell() below replaces it with the element's measured
+       offset, which is what keeps the sidebar's "Saved in this browser only"
+       line — and the chat's own footer — on screen. */
+    height: calc(100vh - var(--navbar-height, 64px));
+    background: #fff;
+    position: relative;
+  }
+
   .gk-chat {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     display: flex; flex-direction: column;
-    height: calc(100vh - var(--navbar-height, 64px));
+    flex: 1; min-width: 0; height: 100%;
     max-width: 820px; margin: 0 auto;
     background: #fff;
     color: #3a4a6b;
+  }
+
+  /* ── History sidebar ──────────────────────────────────────────────────
+     The transcripts behind it live in js/gk-history.js, shared with the
+     popup widget, so this list and the widget's drawer show the same chats.
+     Below 600px the whole page is display:none and the widget takes over
+     full screen, so the widget's drawer IS the mobile history UI. */
+  .gk-sidebar {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    flex: 0 0 262px; width: 262px;
+    display: flex; flex-direction: column;
+    background: #fbfcfe;
+    border-right: 1px solid #dde8f5;
+    color: #3a4a6b;
+    transition: flex-basis 170ms ease, width 170ms ease;
+  }
+  .gk-shell.is-collapsed .gk-sidebar {
+    flex-basis: 0; width: 0; overflow: hidden; border-right: none;
+  }
+
+  .gk-sidebar-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 10px 10px 14px;
+    border-bottom: 1px solid #eef2f9;
+  }
+  .gk-new-chat {
+    flex: 1; display: flex; align-items: center; gap: 7px;
+    background: #f2f6fc; border: 1px solid #dde8f5; border-radius: 9px;
+    color: #5876a9; font: inherit; font-size: 13px; font-weight: 600;
+    padding: 8px 11px; cursor: pointer; text-align: left;
+    transition: background 120ms ease;
+  }
+  .gk-new-chat svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .gk-new-chat:hover { background: #e8eff9; }
+  .gk-sidebar-toggle, .gk-sidebar-reopen {
+    background: transparent; border: none; color: #7a8fb5;
+    cursor: pointer; padding: 5px; display: flex; border-radius: 6px;
+  }
+  .gk-sidebar-toggle svg, .gk-sidebar-reopen svg { width: 16px; height: 16px; }
+  .gk-sidebar-toggle:hover, .gk-sidebar-reopen:hover { color: #5876a9; background: #eef2f9; }
+  .gk-sidebar-reopen {
+    position: absolute; top: 14px; left: 12px; z-index: 4;
+    background: #fff; border: 1px solid #dde8f5;
+  }
+  .gk-sidebar-reopen[hidden] { display: none; }
+
+  .gk-hist-list { flex: 1; overflow-y: auto; padding: 8px 8px 12px; }
+  .gk-hist-item {
+    position: relative; display: block; width: 100%; text-align: left;
+    background: transparent; border: none; font: inherit; color: #3a4a6b;
+    padding: 9px 52px 9px 11px; margin: 1px 0;
+    border-radius: 9px; cursor: pointer;
+  }
+  .gk-hist-item:hover { background: #f2f6fc; }
+  .gk-hist-item.is-active { background: #eef2f9; box-shadow: inset 2px 0 0 #5876a9; }
+  .gk-hist-title {
+    display: block; font-size: 13.5px; line-height: 1.35; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .gk-hist-meta { display: block; font-size: 11.5px; color: #7a8fb5; margin-top: 3px; }
+  .gk-hist-rename {
+    width: 100%; font: inherit; font-size: 13.5px; font-weight: 600;
+    color: #3a4a6b; background: #fff;
+    border: 1px solid #abc5ec; border-radius: 5px;
+    padding: 1px 5px; outline: none;
+  }
+  .gk-hist-actions {
+    position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+    display: flex; align-items: center; gap: 1px;
+    opacity: 0; transition: opacity 120ms ease;
+  }
+  .gk-hist-act {
+    display: flex; color: #b0bfd4; cursor: pointer;
+    padding: 4px; border-radius: 5px;
+  }
+  .gk-hist-act svg { width: 13px; height: 13px; }
+  .gk-hist-item:hover .gk-hist-actions,
+  .gk-hist-actions:focus-within { opacity: 1; }
+  .gk-hist-act:hover { color: #5876a9; background: #e3ebf7; }
+  .gk-hist-del:hover { color: #d06b7a; background: #f9e9ec; }
+  .gk-hist-empty {
+    padding: 26px 16px; font-size: 13px; color: #7a8fb5;
+    text-align: center; line-height: 1.65;
+  }
+  .gk-hist-foot {
+    border-top: 1px solid #eef2f9; padding: 11px 14px;
+    font-size: 11.5px; color: #7a8fb5;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .gk-hist-clear {
+    background: transparent; border: none; font: inherit; font-size: 11.5px;
+    color: #7a8fb5; text-decoration: underline; cursor: pointer; padding: 0;
+  }
+  .gk-hist-clear:hover { color: #5876a9; }
+  .gk-hist-clear.confirm { color: #d06b7a; font-weight: 700; text-decoration: none; }
+
+  .gk-sidebar-scrim { display: none; }
+
+  /* Between the widest phone and the point where 262px of sidebar starts
+     eating the reading column, the sidebar floats over the chat instead. */
+  @media (max-width: 980px) {
+    .gk-sidebar {
+      position: absolute; top: 0; bottom: 0; left: 0; z-index: 6;
+      box-shadow: 0 12px 40px rgba(88,118,169,0.18);
+    }
+    .gk-shell.is-collapsed .gk-sidebar { box-shadow: none; }
+    .gk-sidebar-scrim {
+      display: block; position: absolute; inset: 0; z-index: 5;
+      background: rgba(58,74,107,0.28);
+      opacity: 0; pointer-events: none; transition: opacity 170ms ease;
+    }
+    .gk-shell:not(.is-collapsed) .gk-sidebar-scrim { opacity: 1; pointer-events: auto; }
   }
 
   .gk-chat-header {
@@ -38,6 +164,8 @@
   .gk-chat.gk-empty .gk-chat-header { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 16px; }
   .gk-chat.gk-empty .gk-input-area { flex: 0; }
   .gk-chat.gk-empty .gk-footer { flex: 1; padding-top: 8px; }
+
+  .gk-chip.expired { opacity: 0.55; }
 
   .gk-msg { display: flex; gap: 10px; align-items: flex-start; }
   .gk-msg.user { justify-content: flex-end; }
@@ -475,6 +603,11 @@
 
   @media (max-width: 600px) {
     .gk-chat, .gk-modal-overlay { display: none !important; }
+    /* The popup widget takes over full screen below this width (see the
+       bridge at the bottom of this file), and its drawer shows the same
+       history from the same store. */
+    .gk-shell { display: block; height: auto; }
+    .gk-sidebar, .gk-sidebar-reopen, .gk-sidebar-scrim { display: none !important; }
     .page-body.my-10 { padding: 0 !important; }
     #site-header.header { position: relative; z-index: 9999; }
   }
@@ -484,6 +617,30 @@
     .gk-chat-header { padding: 32px 16px 0; }
   }
 </style>
+
+<div class="gk-shell" id="gk-shell">
+  <aside class="gk-sidebar" id="gk-sidebar" aria-label="Chat history">
+    <div class="gk-sidebar-head">
+      <button type="button" class="gk-new-chat" id="gk-new-chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New chat
+      </button>
+      <button type="button" class="gk-sidebar-toggle" id="gk-sidebar-toggle" aria-label="Hide history" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+    <div class="gk-hist-list" id="gk-hist-list"></div>
+    <div class="gk-hist-foot">
+      <span>Saved in this browser only.</span>
+      <button type="button" class="gk-hist-clear" id="gk-hist-clear">Clear</button>
+    </div>
+  </aside>
+  <div class="gk-sidebar-scrim" id="gk-sidebar-scrim"></div>
+  <button type="button" class="gk-sidebar-reopen" id="gk-sidebar-reopen" aria-label="Show history" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/>
+    </svg>
+  </button>
 
 <div class="gk-chat">
   <div class="gk-chat-header">
@@ -522,6 +679,7 @@
     AI&nbsp;agent? <a class="gk-footer-link" href="/llms.txt">Use the API</a>.
   </div>
 </div>
+</div>
 
 <div class="gk-modal-overlay" id="gk-modal-overlay" hidden>
   <div class="gk-modal" role="dialog" aria-label="Send feedback">
@@ -539,6 +697,7 @@
 <script src="/js/katex/katex.min.js" defer></script>
 <script src="/js/gk-track.js"></script>
 <script src="/js/gk-steps.js"></script>
+<script src="/js/gk-history.js"></script>
 <script>
 (function() {
   var API_URL = "https://d325iygsd5krw9.cloudfront.net/api/chat";
@@ -580,6 +739,14 @@
   var modalSendBtn = document.getElementById("gk-modal-send");
   var modalCancelBtn = document.getElementById("gk-modal-cancel");
   var generalFbBtn = document.getElementById("gk-general-fb");
+  var shellEl = document.getElementById("gk-shell");
+  var sidebarEl = document.getElementById("gk-sidebar");
+  var histListEl = document.getElementById("gk-hist-list");
+  var histNewBtn = document.getElementById("gk-new-chat");
+  var histToggleBtn = document.getElementById("gk-sidebar-toggle");
+  var histReopenBtn = document.getElementById("gk-sidebar-reopen");
+  var histClearBtn = document.getElementById("gk-hist-clear");
+  var histScrimEl = document.getElementById("gk-sidebar-scrim");
 
   var messages = [];
   var loading = false;
@@ -617,22 +784,60 @@
     });
   }
 
-  /* The conversation id lives in sessionStorage, not just in memory, so a
-     reload continues the same conversation instead of silently starting a new
-     one — which used to inflate the session count and deflate session depth.
-     This is the one thing we do put in device storage, and it is the
-     "strictly necessary" kind: it exists to keep the chat the user asked for
-     working, not to measure them. It dies with the tab. */
+  /* Which conversation THIS TAB is looking at. It stays in sessionStorage for
+     the same reason as before — a reload continues the conversation the
+     visitor asked for instead of silently starting a new one, which used to
+     inflate the session count and deflate session depth — and it still dies
+     with the tab. What is new is the durable archive behind it
+     (js/gk-history.js), which both this page and the popup widget share, so a
+     chat started in one can be finished in the other. gk-history.js reads and
+     writes this exact key, so the two paths below are interchangeable. */
   var CONV_KEY = "gk_conv";
+
+  /* Degrades to null if the script is blocked, storage is unavailable, or the
+     browser is in private mode. Every call site below no-ops on null, so the
+     page behaves exactly as it did before history existed. */
+  var HIST = (window.GKHistory && window.GKHistory.init({ surface: "fullpage", sessionKey: CONV_KEY })) || null;
+  if (HIST && !HIST.available()) HIST = null;
+  var attachmentsExpired = false;
 
   function ensureConversationId() {
     if (!conversationId) {
-      try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+      if (HIST) conversationId = HIST.activeId();
+      if (!conversationId) {
+        try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+      }
       if (!conversationId) conversationId = uuid();
-      try { sessionStorage.setItem(CONV_KEY, conversationId); } catch (e) {}
+      setActiveConversation(conversationId);
     }
     T.setConversationId(conversationId);
     return conversationId;
+  }
+
+  /** The one place the active id is written, so restore and a fresh turn
+   *  cannot drift apart. */
+  function setActiveConversation(id) {
+    conversationId = id || null;
+    if (HIST) HIST.setActive(id || null);
+    else {
+      try {
+        if (id) sessionStorage.setItem(CONV_KEY, id);
+        else sessionStorage.removeItem(CONV_KEY);
+      } catch (e) {}
+    }
+    if (id) T.setConversationId(id);
+  }
+
+  /* Record the conversation. Debounced inside gk-history.js. */
+  function persist() {
+    if (!HIST || !conversationId) return;
+    HIST.save({
+      id: conversationId,
+      surface: "fullpage",
+      messages: messages,
+      feedbackState: feedbackState,
+      ratingDone: !!(sessionRating.rated || sessionRating.dismissed)
+    });
   }
 
   /* Click-through: one delegated listener catches every link in the messages
@@ -993,7 +1198,7 @@
           // Echo the attachment chips inside the sent bubble so the turn stays
           // legible after the composer clears.
           var chips = (m.attachmentChips && m.attachmentChips.length)
-            ? '<div class="gk-chips">' + chipsHtml(m.attachmentChips, true) + '</div>' : "";
+            ? '<div class="gk-chips">' + chipsHtml(m.attachmentChips, true, !!m.attachmentsExpired) + '</div>' : "";
           node.innerHTML = '<div class="gk-bubble">' + chips + esc(m.content) + '</div>';
         } else {
           var vis = stripAttach(m.content);
@@ -1240,17 +1445,17 @@
     return fmtBytes(p.size);
   }
   // Shared by the composer chips and the echo inside a sent user bubble.
-  function chipsHtml(items, readonly) {
+  function chipsHtml(items, readonly, expired) {
     return items.map(function(p) {
-      var cls = "gk-chip" + (p.status === "error" ? " error" : "");
+      var cls = "gk-chip" + (p.status === "error" ? " error" : "") + (expired ? " expired" : "");
       var bar = (p.status === "uploading")
         ? '<div class="gk-chip-bar" style="width:' + (p.pct || 0) + '%"></div>' : "";
       var x = readonly ? ""
         : '<button class="gk-chip-x" type="button" data-chip="' + esc(p.id) + '" aria-label="Remove">&times;</button>';
-      return '<div class="' + cls + '">' +
+      return '<div class="' + cls + '"' + (expired ? ' title="No longer attached"' : "") + '>' +
         '<span class="gk-chip-icon">' + chipIcon(p.kind) + '</span>' +
         '<span class="gk-chip-name">' + esc(p.name) + '</span>' +
-        '<span class="gk-chip-meta">' + esc(chipMeta(p)) + '</span>' + x + bar + '</div>';
+        '<span class="gk-chip-meta">' + esc(expired ? "no longer attached" : chipMeta(p)) + '</span>' + x + bar + '</div>';
     }).join("");
   }
   function renderChips() {
@@ -1436,6 +1641,9 @@
       renderChips();
     }
     messages.push(userMsg);
+    // Save the question before the answer exists: a tab closed mid-answer
+    // should still leave the conversation in the archive.
+    persist();
     setLoading(true);
 
     abortController = new AbortController();
@@ -1550,6 +1758,11 @@
       setLoading(false);
     } finally {
       abortController = null;
+      /* One save site for every ending: the clean SSE exit, the non-SSE JSON
+         reply, an aborted turn (which leaves "_(stopped)_") and a network
+         error (which leaves an apology) are all real history. */
+      persist();
+      renderHistory();
     }
   }
 
@@ -1657,6 +1870,8 @@
       var rating = action === "rate-up" ? "up" : "down";
       feedbackState[msgId] = { rated: rating, commentOpen: rating === "down", commentDraft: "", commentSent: false };
       postFeedback(buildFeedbackPayload({ messageId: msgId, ratedIndex: msgIdx, feedbackType: "rating", rating: rating }));
+      // A thumbs rating should survive a reload the way the answer does.
+      persist();
       renderMessages();
     } else if (action === "comment-cancel") {
       if (feedbackState[msgId]) { feedbackState[msgId].commentOpen = false; feedbackState[msgId].commentDraft = ""; }
@@ -1681,6 +1896,243 @@
     modalOverlay.hidden = true;
   });
   modalOverlay.addEventListener("click", function(e) { if (e.target === modalOverlay) modalOverlay.hidden = true; });
+
+  /* ── Conversation history ──────────────────────────────────────────────
+     The list, the restore path and "New chat". The store itself lives in
+     js/gk-history.js and is shared with the popup widget. */
+
+  function applyConversation(conv) {
+    messages = conv.messages;
+    feedbackState = conv.feedbackState || {};
+    expandedThreads = {};
+    attachmentsExpired = !!conv.attachmentsExpired;
+    /* The micro-survey pops after the 2nd assistant reply. On a restored
+       six-turn thread that would fire the instant it opens, so suppress it
+       for a conversation that already answered (or dismissed) it. */
+    sessionRating = { shown: !!conv.ratingDone, dismissed: !!conv.ratingDone, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
+    setActiveConversation(conv.id);
+    renderMessages();
+    /* Reuses the upload notice bar rather than adding a second one. Without
+       this the model would appear to have forgotten a document the transcript
+       plainly shows — the file_ids expired after 24h and were stripped on the
+       way in, so they can never be resent. */
+    if (attachmentsExpired) {
+      showUploadNote("Files from this chat are no longer available. Attach them again if you'd like another look.");
+    } else {
+      clearUploadError();
+    }
+  }
+
+  function restoreConversation(id) {
+    if (!HIST || !id) return;
+    HIST.flush();
+    HIST.get(id).then(function(conv) {
+      if (!conv) return;
+      applyConversation(conv);
+      renderHistory();
+      if (window.innerWidth <= 980) setSidebarOpen(false);
+      textarea.focus();
+    });
+  }
+
+  /** Abandons the current conversation — it stays in the archive, it is not
+   *  erased — and starts a fresh one. */
+  function newConversation() {
+    if (HIST) HIST.flush();
+    messages = [];
+    feedbackState = {};
+    expandedThreads = {};
+    attachmentsExpired = false;
+    sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
+    // Nothing is written until the first turn, so the list never fills up
+    // with empty threads.
+    setActiveConversation(null);
+    clearUploadError();
+    renderMessages();
+    renderHistory();
+    textarea.focus();
+  }
+
+  function renderHistory() {
+    if (!HIST || !histListEl) return;
+    // A rebuild mid-rename would discard what the visitor is typing.
+    if (histListEl.querySelector("input")) return;
+    HIST.list().then(function(items) {
+      if (!items.length) {
+        histListEl.innerHTML = '<div class="gk-hist-empty">Your past chats will appear here.</div>';
+        return;
+      }
+      var html = "";
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        html +=
+          '<button type="button" class="gk-hist-item' + (it.id === conversationId ? " is-active" : "") +
+          '" data-hist-id="' + esc(it.id) + '">' +
+          '<span class="gk-hist-title">' + esc(it.title || "New chat") + '</span>' +
+          '<span class="gk-hist-meta">' + it.turns + (it.turns === 1 ? " message · " : " messages · ") +
+          esc(it.when) + '</span>' +
+          '<span class="gk-hist-actions">' +
+          '<span class="gk-hist-act" role="button" tabindex="0" aria-label="Rename this chat" title="Rename" data-hist-ren="' + esc(it.id) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>' +
+          '</span>' +
+          '<span class="gk-hist-act gk-hist-del" role="button" tabindex="0" aria-label="Delete this chat" title="Delete" data-hist-del="' + esc(it.id) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
+          '</span></span></button>';
+      }
+      histListEl.innerHTML = html;
+    });
+  }
+
+  function setSidebarOpen(next) {
+    var openNow = !!next;
+    shellEl.classList.toggle("is-collapsed", !openNow);
+    histReopenBtn.hidden = openNow;
+    histToggleBtn.setAttribute("aria-expanded", openNow ? "true" : "false");
+    // Remembered per browser, not per tab: a visitor who collapses it means it.
+    if (HIST) HIST.ui({ sidebar: openNow ? "open" : "collapsed" });
+  }
+
+  var clearArmed = false;
+  function resetClearConfirm() {
+    clearArmed = false;
+    histClearBtn.textContent = "Clear";
+    histClearBtn.classList.remove("confirm");
+  }
+
+  if (HIST) {
+    HIST.subscribe(renderHistory);
+    /* A save can fork around another tab that moved the same conversation on;
+       follow the fork, or this tab's next turn keeps writing under an id that
+       is no longer its own. */
+    HIST.onFork(function(oldId, newId) {
+      if (conversationId === oldId) setActiveConversation(newId);
+    });
+
+    histNewBtn.addEventListener("click", newConversation);
+    histToggleBtn.addEventListener("click", function() { setSidebarOpen(false); });
+    histReopenBtn.addEventListener("click", function() { setSidebarOpen(true); });
+    histScrimEl.addEventListener("click", function() { setSidebarOpen(false); });
+
+    /* Two-step, in place. A window.confirm() blocks every subsequent browser
+       event and reads as a browser warning rather than as part of the page. */
+    histClearBtn.addEventListener("click", function() {
+      if (!clearArmed) {
+        clearArmed = true;
+        histClearBtn.textContent = "Delete all?";
+        histClearBtn.classList.add("confirm");
+        setTimeout(function() { if (clearArmed) resetClearConfirm(); }, 4000);
+        return;
+      }
+      HIST.clear().then(function() {
+        resetClearConfirm();
+        newConversation();
+      });
+    });
+
+    histListEl.addEventListener("click", function(ev) {
+      var ren = ev.target && ev.target.closest ? ev.target.closest("[data-hist-ren]") : null;
+      if (ren) {
+        ev.stopPropagation();
+        startRename(ren.closest("[data-hist-id]"));
+        return;
+      }
+      var del = ev.target && ev.target.closest ? ev.target.closest("[data-hist-del]") : null;
+      if (del) {
+        ev.stopPropagation();
+        var delId = del.getAttribute("data-hist-del");
+        HIST.remove(delId).then(function() {
+          // Deleting the conversation you are sitting in leaves the transcript
+          // on screen but unowned; start a clean one instead.
+          if (delId === conversationId) newConversation();
+          else renderHistory();
+        });
+        return;
+      }
+      var item = ev.target && ev.target.closest ? ev.target.closest("[data-hist-id]") : null;
+      if (item) restoreConversation(item.getAttribute("data-hist-id"));
+    });
+
+    /* Rename in place. Driven by the pencil rather than a double-click on the
+       row: the row's own click restores the chat and rebuilds the list, which
+       would pull the input out from under the second click. */
+    function startRename(item) {
+      var titleEl = item.querySelector(".gk-hist-title");
+      if (!titleEl || titleEl.querySelector("input")) return;
+      var id = item.getAttribute("data-hist-id");
+      var current = titleEl.textContent;
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = current;
+      input.className = "gk-hist-rename";
+      titleEl.textContent = "";
+      titleEl.appendChild(input);
+      input.focus();
+      input.select();
+      var settled = false;
+      function commit(save) {
+        if (settled) return;
+        settled = true;
+        var next = input.value.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+        var keep = (save && next) ? next : current;
+        // Put the plain title back first: renderHistory() bails out while an
+        // input is still in the list, so it cannot be what removes it.
+        titleEl.textContent = keep;
+        if (save && next && next !== current) HIST.rename(id, next).then(renderHistory);
+        else renderHistory();
+      }
+      input.addEventListener("mousedown", function(e) { e.stopPropagation(); });
+      input.addEventListener("click", function(e) { e.stopPropagation(); });
+      input.addEventListener("blur", function() { commit(true); });
+      input.addEventListener("keydown", function(e) {
+        e.stopPropagation();
+        if (e.key === "Enter") { e.preventDefault(); commit(true); }
+        else if (e.key === "Escape") { e.preventDefault(); commit(false); }
+      });
+    }
+
+    document.addEventListener("keydown", function(ev) {
+      if (ev.key === "Escape" && window.innerWidth <= 980 && !shellEl.classList.contains("is-collapsed")) {
+        setSidebarOpen(false);
+      }
+    });
+
+    setSidebarOpen(HIST.ui().sidebar !== "collapsed");
+    renderHistory();
+
+    /* Reloading should return you to the conversation you were in, rather
+       than to an empty page under the same id — which is what happened before
+       history existed. */
+    var activeConv = HIST.activeId();
+    if (activeConv) {
+      HIST.get(activeConv).then(function(conv) {
+        if (conv && conv.messages.length && messages.length === 0) {
+          applyConversation(conv);
+          renderHistory();
+        }
+      });
+    }
+  } else if (shellEl) {
+    // No store: no history affordances at all, rather than a permanently
+    // empty list.
+    shellEl.classList.add("is-collapsed");
+    if (histReopenBtn) histReopenBtn.hidden = true;
+    if (sidebarEl) sidebarEl.style.display = "none";
+  }
+
+  /* The column is meant to be exactly as tall as the space under the header.
+     Measure that rather than assuming it: --navbar-height does not include the
+     Harvard bar, and a hard-coded constant leaves the footer under the fold. */
+  function sizeShell() {
+    if (!shellEl) return;
+    try {
+      var top = shellEl.getBoundingClientRect().top + (window.scrollY || 0);
+      if (top > 0 && top < window.innerHeight) {
+        shellEl.style.height = "calc(100vh - " + Math.round(top) + "px)";
+      }
+    } catch (e) {}
+  }
+  sizeShell();
+  window.addEventListener("resize", sizeShell);
 
   renderMessages();
   textarea.focus();

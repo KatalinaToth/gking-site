@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.8.0";
+  var WIDGET_VERSION = "1.9.0";
 
   var PIXEL_URL = "https://ueczzuogsj2hnfdr7gwfwuh5sa0oozkm.lambda-url.us-east-2.on.aws/";
 
@@ -136,6 +136,35 @@
       (document.head || document.documentElement).appendChild(s);
     } catch (e) {}
   })();
+
+  /* Conversation history (js/gk-history.js), loaded the same way. Deferred to
+     the first panel open rather than eager like gk-steps: this widget mounts
+     on every page of the site and nothing here is needed until someone
+     actually opens the chat. If it never loads, historyReady stays false,
+     the header button stays hidden, and the widget behaves exactly as 1.8.0
+     did — the transcript simply isn't recorded. */
+  var HIST = null;
+  var historyRequested = false;
+  var historyOnReady = null;
+  function loadHistory() {
+    if (historyRequested) return;
+    historyRequested = true;
+    try {
+      var src = (scriptEl && scriptEl.src) || "";
+      var base = src ? src.replace(/[^/]*$/, "") : "";
+      if (!base) return;
+      var s = document.createElement("script");
+      s.src = base + "gk-history.js";
+      s.async = true;
+      s.onload = function () {
+        if (!window.GKHistory) return;
+        HIST = window.GKHistory.init({ surface: "embed", sessionKey: "gk_conv_widget" });
+        if (!HIST.available()) { HIST = null; return; }
+        if (historyOnReady) historyOnReady();
+      };
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) {}
+  }
 
   /** Queue-aware wrapper: safe to call before gk-track.js has loaded. */
   function track(name, props) {
@@ -266,11 +295,11 @@
     "  display: inline-block; width: 6px; height: 6px; border-radius: 50%;",
     "  background: #1bbc9d; margin-right: 6px; vertical-align: middle;",
     "}",
-    ".header .close, .header .expand, .header .minimize {",
+    ".header .close, .header .expand, .header .minimize, .header .hist-btn {",
     "  background: transparent; border: none; color: #fff;",
     "  opacity: 0.9; cursor: pointer; padding: 4px; display: flex;",
     "}",
-    ".header .close:hover, .header .expand:hover, .header .minimize:hover { opacity: 1; }",
+    ".header .close:hover, .header .expand:hover, .header .minimize:hover, .header .hist-btn:hover { opacity: 1; }",
     ".messages {",
     "  flex: 1; overflow-y: auto;",
     "  padding: 14px 14px 6px;",
@@ -661,6 +690,86 @@
     "  font-size: 10px; font-weight: 700; line-height: 1;",
     "  padding: 2px 4px; border-radius: 3px;",
     "}",
+    // ── History drawer ──────────────────────────────────────────────────
+    // Lives inside .panel, which is already position:fixed with
+    // overflow:hidden, so the slide-in is clipped for free. It is a SIBLING
+    // of .messages, never a child: renderMessages() wipes that subtree on
+    // every animation frame while streaming and would destroy the drawer
+    // sixty times a second.
+    ".hist {",
+    "  position: absolute; top: 0; bottom: 0; left: 0;",
+    "  width: min(300px, 88%);",
+    "  background: #fff; border-right: 1px solid #dde8f5;",
+    "  display: flex; flex-direction: column;",
+    "  transform: translateX(-102%);",
+    "  transition: transform 180ms ease;",
+    "  z-index: 3;",
+    "}",
+    ".hist[hidden] { display: none; }",
+    ".hist.open { transform: translateX(0); }",
+    ".hist-scrim {",
+    "  position: absolute; inset: 0;",
+    "  background: rgba(58,74,107,0.35);",
+    "  opacity: 0; pointer-events: none;",
+    "  transition: opacity 180ms ease;",
+    "  z-index: 2;",
+    "}",
+    ".hist-scrim.open { opacity: 1; pointer-events: auto; }",
+    ".hist-head {",
+    "  display: flex; align-items: center; gap: 8px;",
+    "  padding: 10px 10px 8px 12px;",
+    "  border-bottom: 1px solid #eef2f9;",
+    "}",
+    ".hist-new {",
+    "  flex: 1; display: flex; align-items: center; gap: 6px;",
+    "  background: #f2f6fc; border: 1px solid #dde8f5; border-radius: 8px;",
+    "  color: #5876a9; font-size: 12.5px; font-weight: 600;",
+    "  padding: 7px 10px; cursor: pointer; text-align: left;",
+    "}",
+    ".hist-new:hover { background: #e8eff9; }",
+    ".hist-close { background: transparent; border: none; color: #7a8fb5; cursor: pointer; padding: 4px; display: flex; }",
+    ".hist-close:hover { color: #5876a9; }",
+    ".hist-list { flex: 1; overflow-y: auto; padding: 6px 6px 10px; }",
+    ".hist-item {",
+    "  position: relative; display: block; width: 100%; text-align: left;",
+    "  background: transparent; border: none; cursor: pointer;",
+    "  padding: 8px 50px 8px 10px; margin: 1px 0;",
+    "  border-radius: 8px; color: #3a4a6b;",
+    "}",
+    ".hist-item:hover { background: #f4f7fc; }",
+    ".hist-item.is-active { background: #eef2f9; box-shadow: inset 2px 0 0 #5876a9; }",
+    ".hist-title {",
+    "  display: block; font-size: 13px; line-height: 1.35; font-weight: 600;",
+    "  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+    "}",
+    ".hist-meta { display: block; font-size: 11px; color: #7a8fb5; margin-top: 2px; }",
+    ".hist-rename {",
+    "  width: 100%; font: inherit; font-size: 13px; font-weight: 600;",
+    "  color: #3a4a6b; background: #fff;",
+    "  border: 1px solid #abc5ec; border-radius: 5px;",
+    "  padding: 1px 5px; outline: none;",
+    "}",
+    ".hist-actions {",
+    "  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);",
+    "  display: flex; align-items: center; gap: 1px;",
+    "  opacity: 0; transition: opacity 120ms ease;",
+    "}",
+    ".hist-act { display: flex; color: #b0bfd4; cursor: pointer; padding: 4px; border-radius: 5px; }",
+    ".hist-item:hover .hist-actions, .hist-actions:focus-within { opacity: 1; }",
+    ".hist-act:hover { color: #5876a9; background: #e3ebf7; }",
+    ".hist-del:hover { color: #d06b7a; background: #f9e9ec; }",
+    ".hist-empty { padding: 22px 14px; font-size: 12.5px; color: #7a8fb5; text-align: center; line-height: 1.6; }",
+    ".hist-foot {",
+    "  border-top: 1px solid #eef2f9; padding: 9px 12px;",
+    "  font-size: 11px; color: #7a8fb5;",
+    "  display: flex; align-items: center; justify-content: space-between; gap: 8px;",
+    "}",
+    ".hist-clear { background: transparent; border: none; color: #7a8fb5; font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; }",
+    ".hist-clear:hover { color: #5876a9; }",
+    ".hist-clear.confirm { color: #d06b7a; font-weight: 700; text-decoration: none; }",
+    // A file whose 24h upload window has closed. The chip stays so the
+    // transcript still reads correctly; it just can't be sent again.
+    ".chip.expired { opacity: 0.55; }",
     "@media (max-width: 600px) {",
     "  .btn { right: 16px; bottom: 16px; width: 52px; height: 52px; }",
     "  .panel {",
@@ -681,6 +790,12 @@
     "  .feedback-comment textarea, .session-rating textarea, .modal textarea { font-size: 16px; }",
     "  .input-row .send { width: 34px; height: 34px; }",
     "  .footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }",
+    // Below 600px this drawer IS the history UI for /ask-gary too: the
+    // full-page chat is display:none there and the widget is force-opened
+    // full screen (see the bridge in layouts/chatbot/single.html).
+    "  .hist { width: min(340px, 92%); }",
+    "  .hist-head { padding-top: max(10px, env(safe-area-inset-top)); }",
+    "  .hist-item { padding-top: 10px; padding-bottom: 10px; }",
     "}"
   ].join("\n");
 
@@ -700,6 +815,13 @@
     '      <div class="name"></div>',
     '      <div class="status" style="display:none;"></div>',
     '    </div>',
+    '    <button class="hist-btn" type="button" aria-label="Chat history" title="Chat history" aria-expanded="false" style="display:none;">',
+    '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">',
+    '        <path d="M3 3v5h5"/>',
+    '        <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>',
+    '        <path d="M12 7v5l3 2"/>',
+    '      </svg>',
+    '    </button>',
     '    <button class="expand" type="button" aria-label="Full screen">',
     '      <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">',
     '        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>',
@@ -722,6 +844,23 @@
     '    </button>',
     '  </div>',
     '  <div class="messages"></div>',
+    '  <div class="hist-scrim"></div>',
+    '  <aside class="hist" aria-label="Chat history" hidden>',
+    '    <div class="hist-head">',
+    '      <button type="button" class="hist-new">',
+    '        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    '        New chat',
+    '      </button>',
+    '      <button type="button" class="hist-close" aria-label="Close history">',
+    '        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
+    '      </button>',
+    '    </div>',
+    '    <div class="hist-list"></div>',
+    '    <div class="hist-foot">',
+    '      <span class="hist-note">Saved in this browser only.</span>',
+    '      <button type="button" class="hist-clear">Clear</button>',
+    '    </div>',
+    '  </aside>',
     '  <div class="chips"></div>',
     '  <div class="upload-err" role="alert" aria-live="polite">',
     '    <span class="upload-err-text"></span>',
@@ -1089,6 +1228,13 @@
     var modalTextarea = shadow.querySelector(".modal-textarea");
     var modalSendBtn = shadow.querySelector(".modal-send");
     var modalCancelBtn = shadow.querySelector(".modal-cancel");
+    var histBtn = shadow.querySelector(".hist-btn");
+    var histEl = shadow.querySelector(".hist");
+    var histScrim = shadow.querySelector(".hist-scrim");
+    var histListEl = shadow.querySelector(".hist-list");
+    var histNewBtn = shadow.querySelector(".hist-new");
+    var histCloseBtn = shadow.querySelector(".hist-close");
+    var histClearBtn = shadow.querySelector(".hist-clear");
 
     headerAvatar.textContent = config.avatarLabel;
     headerName.textContent = config.botName;
@@ -1128,22 +1274,57 @@
     // the 2nd completed assistant reply, once per conversation.
     var sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
 
-    /* Persisted in sessionStorage so a page reload continues the same
-       conversation rather than silently forking a new one. This is the only
-       device storage the widget uses, and it is the "strictly necessary"
-       kind — it keeps the chat the user asked for working. It dies with the
-       tab, and analytics identity never touches it. */
+    /* Which conversation THIS TAB is looking at. Per-tab by construction, so
+       two open tabs never fight over it — the durable archive in
+       gk-history.js is what they share. Kept in sessionStorage for the same
+       reason as before: a reload continues the conversation the visitor asked
+       for rather than silently forking a new one, and it dies with the tab.
+       gk-history.js reads and writes this exact key, so the two paths below
+       are interchangeable and nothing is orphaned if the module loads late. */
     var CONV_KEY = "gk_conv_widget";
+    var histOpen = false;
+    var attachmentsExpired = false;
 
     function ensureConversationId() {
       if (!conversationId) {
-        try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+        if (HIST) conversationId = HIST.activeId();
+        if (!conversationId) {
+          try { conversationId = sessionStorage.getItem(CONV_KEY) || null; } catch (e) {}
+        }
         if (!conversationId) conversationId = uuid();
-        try { sessionStorage.setItem(CONV_KEY, conversationId); } catch (e) {}
+        setActiveConversation(conversationId);
       }
       currentConversationId = conversationId;
       if (trackerReady) T.setConversationId(conversationId);
       return conversationId;
+    }
+
+    /** The one place the active id is written, so restore and a fresh turn
+     *  can't drift apart. */
+    function setActiveConversation(id) {
+      conversationId = id || null;
+      currentConversationId = conversationId;
+      if (HIST) HIST.setActive(id || null);
+      else {
+        try {
+          if (id) sessionStorage.setItem(CONV_KEY, id);
+          else sessionStorage.removeItem(CONV_KEY);
+        } catch (e) {}
+      }
+      if (id && trackerReady) T.setConversationId(id);
+    }
+
+    /* Record the conversation. Debounced inside gk-history.js, and a no-op
+       until the module has loaded (or forever, if it never does). */
+    function persist() {
+      if (!HIST || !conversationId) return;
+      HIST.save({
+        id: conversationId,
+        surface: "embed",
+        messages: messages,
+        feedbackState: feedbackState,
+        ratingDone: !!(sessionRating.rated || sessionRating.dismissed)
+      });
     }
 
     // Click-through beacon: one delegated listener catches every link in the
@@ -1436,7 +1617,7 @@
             // Echo attachment chips inside the sent bubble so the turn stays
             // legible once the composer clears.
             var uchips = m.attachmentChips && m.attachmentChips.length
-              ? '<div class="chips">' + chipsHtml(m.attachmentChips, true) + "</div>" : "";
+              ? '<div class="chips">' + chipsHtml(m.attachmentChips, true, !!m.attachmentsExpired) + "</div>" : "";
             node.innerHTML = '<div class="bubble">' + uchips + escapeHtml(m.content) + "</div>";
           } else {
             var visible = stripAttachTags(m.content);
@@ -1552,6 +1733,10 @@
         // and repaint once it lands so anything already on screen typesets.
         katexOnReady = function () { renderMessages(); };
         loadKatex();
+        // Deferred to here rather than to mount: this widget is on every page
+        // and nothing needs the archive until the chat is actually opened.
+        historyOnReady = historyReadyNow;
+        if (HIST) historyReadyNow(); else loadHistory();
         openedAt = Date.now();
         // widget_open is now distinct from widget_impression (fired on load).
         // Conflating the two is what made the widget's "45% conversion" and
@@ -1566,12 +1751,142 @@
           }, 0);
         }
       } else if (openedAt) {
+        // Never leave a stale drawer to greet the next open.
+        if (histOpen) setHistoryOpen(false);
         track("widget_close", {
           open_ms: Date.now() - openedAt,
           messages_sent: messages.filter(function (m) { return m.role === "user"; }).length
         });
         openedAt = null;
       }
+    }
+
+    // ── Conversation history ────────────────────────────────────────────
+
+    function historyReadyNow() {
+      if (!HIST) return;
+      histBtn.style.display = "";
+      HIST.subscribe(function () { if (histOpen) renderHistory(); });
+      /* A save can fork around another tab that moved the same conversation
+         on; follow the fork, or this tab's next turn keeps writing under an
+         id that is no longer its own. */
+      HIST.onFork(function (oldId, newId) {
+        if (conversationId === oldId) setActiveConversation(newId);
+      });
+      /* Reopening after a reload should show the conversation the tab was in,
+         not an empty panel under the same id — which is what happened before
+         history existed. */
+      var active = HIST.activeId();
+      if (active && messages.length === 0) {
+        HIST.get(active).then(function (conv) {
+          if (conv && conv.messages.length && messages.length === 0) applyConversation(conv);
+        });
+      }
+      if (histOpen) renderHistory();
+    }
+
+    function applyConversation(conv) {
+      messages = conv.messages;
+      feedbackState = conv.feedbackState || {};
+      expandedThreads = {};
+      attachmentsExpired = !!conv.attachmentsExpired;
+      /* The micro-survey pops after the 2nd assistant reply. On a restored
+         six-turn thread that would fire the instant it opens, so suppress it
+         for a conversation that already answered (or dismissed) it. */
+      sessionRating = { shown: !!conv.ratingDone, dismissed: !!conv.ratingDone, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
+      setActiveConversation(conv.id);
+      renderMessages();
+      /* Reuses the upload notice bar rather than adding a second one. Without
+         this the model would appear to have forgotten a document the
+         transcript plainly shows — the file_ids expired after 24h and were
+         stripped on the way in so they can never be resent. */
+      if (attachmentsExpired) {
+        showUploadNote("Files from this chat are no longer available. Attach them again if you'd like another look.");
+      } else {
+        clearUploadError();
+      }
+    }
+
+    function restoreConversation(id) {
+      if (!HIST || !id) return;
+      HIST.flush();
+      HIST.get(id).then(function (conv) {
+        if (!conv) return;
+        applyConversation(conv);
+        setHistoryOpen(false);
+        if (!isMobileViewport()) setTimeout(function () { textarea.focus(); }, 0);
+      });
+    }
+
+    /** Abandon the current conversation — it stays in the archive, it is not
+     *  erased — and start a fresh one. */
+    function newConversation() {
+      if (HIST) HIST.flush();
+      messages = [];
+      feedbackState = {};
+      expandedThreads = {};
+      attachmentsExpired = false;
+      sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
+      // Nothing is written until the first turn, so the list never fills up
+      // with empty threads.
+      setActiveConversation(null);
+      renderMessages();
+    }
+
+    function renderHistory() {
+      if (!HIST) return;
+      // A rebuild mid-rename would discard what the visitor is typing.
+      if (histListEl.querySelector("input")) return;
+      HIST.list().then(function (items) {
+        if (!items.length) {
+          histListEl.innerHTML = '<div class="hist-empty">Your past chats will appear here.</div>';
+          return;
+        }
+        var html = "";
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          html +=
+            '<button type="button" class="hist-item' + (it.id === conversationId ? " is-active" : "") +
+            '" data-hist-id="' + escapeHtml(it.id) + '">' +
+            '<span class="hist-title">' + escapeHtml(it.title || "New chat") + "</span>" +
+            '<span class="hist-meta">' + it.turns + (it.turns === 1 ? " message · " : " messages · ") +
+            escapeHtml(it.when) + "</span>" +
+            '<span class="hist-actions">' +
+            '<span class="hist-act" role="button" tabindex="0" aria-label="Rename this chat" title="Rename" data-hist-ren="' + escapeHtml(it.id) + '">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>' +
+            "</span>" +
+            '<span class="hist-act hist-del" role="button" tabindex="0" aria-label="Delete this chat" title="Delete" data-hist-del="' + escapeHtml(it.id) + '">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
+            "</span></span></button>";
+        }
+        histListEl.innerHTML = html;
+      });
+    }
+
+    function setHistoryOpen(next) {
+      histOpen = !!next && !!HIST;
+      histEl.hidden = !histOpen;
+      histBtn.setAttribute("aria-expanded", histOpen ? "true" : "false");
+      resetClearConfirm();
+      if (histOpen) {
+        renderHistory();
+        // Let the hidden->shown paint land before transitioning, or the
+        // drawer appears already open instead of sliding in.
+        requestAnimationFrame(function () {
+          histEl.classList.add("open");
+          histScrim.classList.add("open");
+        });
+      } else {
+        histEl.classList.remove("open");
+        histScrim.classList.remove("open");
+      }
+    }
+
+    var clearArmed = false;
+    function resetClearConfirm() {
+      clearArmed = false;
+      histClearBtn.textContent = "Clear";
+      histClearBtn.classList.remove("confirm");
     }
 
     function isBusy() { return loading || streaming; }
@@ -1745,17 +2060,17 @@
       if (d.pages) return d.pages + (d.pages === 1 ? " page" : " pages");
       return fmtBytes(p.size);
     }
-    function chipsHtml(items, readonly) {
+    function chipsHtml(items, readonly, expired) {
       return items.map(function (p) {
-        var cls = "chip" + (p.status === "error" ? " error" : "");
+        var cls = "chip" + (p.status === "error" ? " error" : "") + (expired ? " expired" : "");
         var bar = p.status === "uploading"
           ? '<div class="chip-bar" style="width:' + (p.pct || 0) + '%"></div>' : "";
         var x = readonly ? ""
           : '<button class="chip-x" type="button" data-chip="' + escapeHtml(p.id) + '" aria-label="Remove">&times;</button>';
-        return '<div class="' + cls + '">' +
+        return '<div class="' + cls + '"' + (expired ? ' title="No longer attached"' : "") + ">" +
           '<span class="chip-icon">' + chipIcon(p.kind) + "</span>" +
           '<span class="chip-name">' + escapeHtml(p.name) + "</span>" +
-          '<span class="chip-meta">' + escapeHtml(chipMeta(p)) + "</span>" + x + bar + "</div>";
+          '<span class="chip-meta">' + escapeHtml(expired ? "no longer attached" : chipMeta(p)) + "</span>" + x + bar + "</div>";
       }).join("");
     }
     function renderChips() {
@@ -1935,6 +2250,9 @@
         renderChips();
       }
       messages.push(userMsg);
+      // Save the question before the answer exists: a tab closed mid-answer
+      // should still leave the conversation in the archive.
+      persist();
       setLoading(true);
 
       abortController = new AbortController();
@@ -2078,6 +2396,11 @@
         setLoading(false);
       } finally {
         abortController = null;
+        /* One save site for every ending: the clean SSE exit, the non-SSE
+           JSON reply, an aborted turn (which leaves "_(stopped)_") and a
+           network error (which leaves an apology) are all real history. */
+        persist();
+        if (histOpen) renderHistory();
       }
     }
 
@@ -2108,6 +2431,103 @@
     btn.addEventListener("click", function () {
       setOpen(!open);
     });
+
+    // ── History drawer wiring ───────────────────────────────────────────
+    histBtn.addEventListener("click", function () { setHistoryOpen(!histOpen); });
+    histCloseBtn.addEventListener("click", function () { setHistoryOpen(false); });
+    histScrim.addEventListener("click", function () { setHistoryOpen(false); });
+    histNewBtn.addEventListener("click", function () {
+      newConversation();
+      setHistoryOpen(false);
+      if (!isMobileViewport()) setTimeout(function () { textarea.focus(); }, 0);
+    });
+
+    /* Two-step, in place. A window.confirm() would block every subsequent
+       browser event the extension-driven page relies on, and a native dialog
+       over a shadow-root widget reads as a browser warning rather than as
+       part of the chat. */
+    histClearBtn.addEventListener("click", function () {
+      if (!HIST) return;
+      if (!clearArmed) {
+        clearArmed = true;
+        histClearBtn.textContent = "Delete all?";
+        histClearBtn.classList.add("confirm");
+        setTimeout(function () { if (clearArmed) resetClearConfirm(); }, 4000);
+        return;
+      }
+      HIST.clear().then(function () {
+        resetClearConfirm();
+        newConversation();
+        renderHistory();
+      });
+    });
+
+    histListEl.addEventListener("click", function (ev) {
+      var ren = ev.target && ev.target.closest ? ev.target.closest("[data-hist-ren]") : null;
+      if (ren) {
+        ev.stopPropagation();
+        startRename(ren.closest("[data-hist-id]"));
+        return;
+      }
+      var del = ev.target && ev.target.closest ? ev.target.closest("[data-hist-del]") : null;
+      if (del) {
+        ev.stopPropagation();
+        var delId = del.getAttribute("data-hist-del");
+        HIST.remove(delId).then(function () {
+          // Deleting the conversation you are sitting in leaves the transcript
+          // on screen but unowned; start a clean one instead.
+          if (delId === conversationId) newConversation();
+          renderHistory();
+        });
+        return;
+      }
+      var item = ev.target && ev.target.closest ? ev.target.closest("[data-hist-id]") : null;
+      if (item) restoreConversation(item.getAttribute("data-hist-id"));
+    });
+
+    /* Rename in place. Driven by the pencil rather than a double-click on the
+       row: the row's own click restores the chat and rebuilds the list, which
+       would pull the input out from under the second click. */
+    function startRename(item) {
+      if (!item) return;
+      var titleEl = item.querySelector(".hist-title");
+      if (!titleEl || titleEl.querySelector("input")) return;
+      var id = item.getAttribute("data-hist-id");
+      var current = titleEl.textContent;
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = current;
+      input.className = "hist-rename";
+      titleEl.textContent = "";
+      titleEl.appendChild(input);
+      input.focus();
+      input.select();
+      var settled = false;
+      function commit(save) {
+        if (settled) return;
+        settled = true;
+        var next = input.value.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+        var keep = (save && next) ? next : current;
+        // Put the plain title back first: renderHistory() bails out while an
+        // input is still in the list, so it cannot be what removes it.
+        titleEl.textContent = keep;
+        if (save && next && next !== current) HIST.rename(id, next).then(renderHistory);
+        else renderHistory();
+      }
+      input.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+      input.addEventListener("click", function (e) { e.stopPropagation(); });
+      input.addEventListener("blur", function () { commit(true); });
+      input.addEventListener("keydown", function (e) {
+        e.stopPropagation();
+        if (e.key === "Enter") { e.preventDefault(); commit(true); }
+        else if (e.key === "Escape") { e.preventDefault(); commit(false); }
+      });
+    }
+
+    shadow.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && histOpen) { setHistoryOpen(false); ev.stopPropagation(); }
+    });
+
     closeBtn.addEventListener("click", function () {
       setOpen(false);
     });
@@ -2228,6 +2648,8 @@
             rating: rating
           })
         );
+        // A thumbs rating should survive a reload the way the answer does.
+        persist();
         renderMessages();
       } else if (action === "comment-cancel") {
         if (feedbackState[msgId]) {
@@ -2301,14 +2723,24 @@
       toggle: function () {
         setOpen(!open);
       },
+      /* Abandons the current conversation; it does NOT erase it. The
+         transcript was already saved on its last completed turn and stays in
+         the history list — only an explicit delete or Clear removes data. */
       reset: function () {
-        messages = [];
-        feedbackState = {};
-        conversationId = null;
-        currentConversationId = null;
-        try { sessionStorage.removeItem(CONV_KEY); } catch (e) {}
-        sessionRating = { shown: false, dismissed: false, rated: null, commentOpen: false, commentDraft: "", commentSent: false };
-        renderMessages();
+        newConversation();
+      },
+      newChat: function () {
+        newConversation();
+      },
+      /* Lets the /ask-gary mobile takeover reach history without a second
+         implementation: below 600px the full-page chat is hidden and this
+         widget is what the visitor is actually using. */
+      history: {
+        open: function () { setHistoryOpen(true); },
+        close: function () { setHistoryOpen(false); },
+        list: function () { return HIST ? HIST.list() : Promise.resolve([]); },
+        resume: function (id) { restoreConversation(id); },
+        available: function () { return !!HIST; }
       },
       config: config
     };
