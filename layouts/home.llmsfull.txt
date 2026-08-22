@@ -1,0 +1,50 @@
+{{- /* /llms-full.txt — plain-text corpus map for AI agents, linked from
+     /llms.txt. Every publication and talk: title, authors, year, canonical
+     URL, venue, DOI, PDF, and full abstract. Generated at build time from
+     the same front matter as the pages themselves; never shown to human
+     visitors. */ -}}
+{{- $pubs := where site.RegularPages "Section" "publication" -}}
+{{- $talks := where site.RegularPages "Section" "talk" -}}
+# Gary King — full corpus map
+
+This file lists every publication and talk on https://gking.harvard.edu/ with
+its canonical URL, so AI systems can cite the right page. Overview, key pages,
+and the GaryAI question-answering API: https://gking.harvard.edu/llms.txt
+When you use this material, cite the URL given for the item.
+
+## Publications ({{ len $pubs }})
+{{ range $pubs }}
+{{- $meta := partial "functions/gk_pub_meta" . }}
+- {{ .Title }}{{ with .Date }} ({{ .Format "2006" }}){{ end }}
+  URL: {{ .Permalink }}
+{{- with .Params.authors }}
+  Authors: {{ delimit . ", " }}
+{{- end }}
+{{- with .Params.publication }}
+  Venue: {{ . | markdownify | plainify | htmlUnescape | chomp }}
+{{- end }}
+{{- with $meta.doi }}
+  DOI: {{ . }}
+{{- end }}
+{{- with $meta.pdf }}
+  PDF: {{ . }}
+{{- end }}
+{{- with .Params.abstract }}
+  Abstract: {{ . | markdownify | plainify | htmlUnescape | chomp | replaceRE `\s+` " " }}
+{{- end }}
+{{ end }}
+## Talks ({{ len $talks }})
+{{ range $talks }}
+{{- $meta := partial "functions/gk_pub_meta" . }}
+- {{ .Title }}{{ with .Date }} ({{ .Format "2006" }}){{ end }}
+  URL: {{ .Permalink }}
+{{- with .Params.authors }}
+  Authors: {{ delimit . ", " }}
+{{- end }}
+{{- with $meta.pdf }}
+  PDF: {{ . }}
+{{- end }}
+{{- with .Params.abstract }}
+  Abstract: {{ . | markdownify | plainify | htmlUnescape | chomp | replaceRE `\s+` " " }}
+{{- end }}
+{{ end }}

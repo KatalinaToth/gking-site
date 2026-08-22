@@ -1,6 +1,6 @@
 {{ define "main" }}
 
-<div class="mx-auto" style="max-width:1200px;padding-left:5rem;padding-right:5rem;">
+<div class="gk-page mx-auto" style="max-width:1200px;padding-left:5rem;padding-right:5rem;">
   <article class="w-full break-words min-h-[calc(100vh-var(--navbar-height))] min-w-0 pb-8">
     <div class="w-full pt-4">
       {{ $pubSlug := "" }}{{ with .File }}{{ $pubSlug = path.Base (path.Dir .Path) }}{{ end }}

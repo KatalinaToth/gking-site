@@ -6,7 +6,7 @@ aliases:
   - "/advice"
 ---
 
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.5rem;margin-bottom:3rem;">
+<div class="gk-teaching-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.5rem;margin-bottom:3rem;">
 
 <div style="border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;background:#fff;">
   <h3 style="margin:0 0 4px;font-size:1.05rem;"><a href="gov2020/" style="color:#337ab7;text-decoration:none;">Gov 2020: The Hidden Curriculum</a></h3>

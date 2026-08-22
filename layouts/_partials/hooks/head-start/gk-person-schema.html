@@ -1,0 +1,28 @@
+{{/* schema.org Person block for Gary King, homepage only.
+
+     Invisible to visitors. Tells search engines and AI crawlers, in the
+     vocabulary they share, who this site is about — and via sameAs, that
+     this Gary King is the same person as the one on Google Scholar,
+     Wikipedia, ORCID, and Twitter/X (all IDs confirmed against the site's
+     own Contact page or the profiles themselves).
+
+     Distinct from gk-mysite-discovery.html, whose Person block is a
+     "built with GaryKing.org/mysite" directory marker and is deliberately
+     off on this site (params.mysite.discovery: false). */}}
+{{- if .IsHome -}}
+  {{- $person := dict
+        "@context" "https://schema.org"
+        "@type" "Person"
+        "name" "Gary King"
+        "jobTitle" "Albert J. Weatherhead III University Professor"
+        "affiliation" (dict "@type" "Organization" "name" "Harvard University" "url" "https://www.harvard.edu/")
+        "worksFor" (dict "@type" "Organization" "name" "Institute for Quantitative Social Science, Harvard University" "url" "https://www.iq.harvard.edu/")
+        "url" site.BaseURL
+        "sameAs" (slice
+          "https://scholar.google.com/citations?user=5sz_jBoAAAAJ"
+          "https://en.wikipedia.org/wiki/Gary_King_(political_scientist)"
+          "https://orcid.org/0000-0002-5327-7631"
+          "https://garyking.org/"
+          "https://twitter.com/kinggary") -}}
+  <script type="application/ld+json">{{ $person | jsonify | safeJS }}</script>
+{{- end -}}

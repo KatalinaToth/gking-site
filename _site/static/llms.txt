@@ -129,3 +129,15 @@ button on https://gking.harvard.edu/ask-gary/ reaches the maintainers.
 - [People](https://gking.harvard.edu/research-group/): research group and alumni
 - [Ask Gary](https://gking.harvard.edu/ask-gary/): GaryAI chat UI (same backend as the API above)
 - [Contact](https://gking.harvard.edu/contact/)
+
+## Machine-readable indexes
+
+- [Full corpus map](https://gking.harvard.edu/llms-full.txt): every publication
+  and talk with authors, year, venue, DOI, PDF link, abstract, and canonical URL
+- [Publications JSON](https://gking.harvard.edu/publication/index.json): the
+  same publication data as a JSON array
+- [Publications RSS](https://gking.harvard.edu/publication/index.xml)
+- [Sitemap](https://gking.harvard.edu/sitemap.xml)
+
+When citing this material, use the canonical gking.harvard.edu URL listed for
+the item.

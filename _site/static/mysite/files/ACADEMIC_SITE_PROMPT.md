@@ -814,6 +814,27 @@ When given a URL instead of uploaded materials:
 
 ---
 
+## AI & Search Visibility
+
+AI assistants (ChatGPT, Claude, Perplexity) and search engines now answer questions about scholars by crawling their sites — and they cite whichever page describes the work best in machine-readable form. The rules below make that page this site's. Every item is invisible to human visitors — no layout, text, or styling changes.
+
+1. **One `https://` address everywhere.** `baseURL` in `hugo.yaml` must be the final public URL with `https://` — never `http://`, and never derived from a CI variable at build time (GitHub's `configure-pages` `base_url` output can resolve to `http://` and silently poison every canonical URL, `og:url`, and sitemap entry with the insecure scheme). Canonical tags and the sitemap inherit `baseURL`, so getting this one line right fixes all of them at once.
+
+2. **robots.txt welcomes crawlers and signposts the map.** Create a `layouts/robots.txt` template with: `User-agent: *` and no blocks aimed at AI crawlers (GPTBot, ClaudeBot, PerplexityBot, etc.); a `Sitemap:` line built with `{{ "sitemap.xml" | absURL }}`; and a comment pointing to `/llms.txt`. Never `Disallow` a path that the sitemap advertises — the two files must not contradict each other (if a path is disallowed, exclude it from the sitemap too).
+
+3. **llms.txt at the site root.** A plain-text/markdown welcome file (~10–15 lines) that AI agents look for at `/llms.txt`: one or two sentences on who the owner is (name, title, institution, research areas), then a short list of the site's key URLs (bio/CV, writings, software, teaching, contact). Write it from the same "Who I Am" facts as the rest of the site. Not linked from the nav — machines find it by convention.
+
+4. **Scholarly metadata on every publication page.** From the same front matter each page already carries (title, authors, date, abstract, venue, links), emit in the `<head>` via a partial:
+   - **Google Scholar tags:** `citation_title`, one `citation_author` per author, `citation_publication_date` (`YYYY/MM/DD`), `citation_pdf_url` (absolute URL), and `citation_doi` when a `doi.org` link exists. This is the format Google Scholar's crawler indexes.
+   - **`ScholarlyArticle` JSON-LD** (use `@type: Book` for books): `headline`, author list as Person objects, `datePublished`, `abstract` (plain text — run it through `plainify | htmlUnescape` so no HTML entities leak in), `url` (the page's canonical permalink), and the DOI as `identifier`/`sameAs`.
+   Skip pages the owner marked private/unlisted. Talks get the tags too if they have abstracts; use `@type: CreativeWork`.
+
+5. **All content in the HTML, no JS-only content.** The server-rendered writings list is already required elsewhere in these instructions; it bears repeating here because JS-injected content is the single most common AI-readability failure on academic sites. A crawler that never runs JavaScript must still see every title, author list, venue, and abstract.
+
+6. **Verify like a crawler before handing over.** After the first deploy, fetch (with `curl`, not a browser): `/robots.txt`, `/sitemap.xml` (every `<loc>` must start with `https://`), `/llms.txt`, and one publication page (must contain `citation_title` and `application/ld+json`). If any of these fail, the site looks fine to humans but is invisible where the owner's colleagues are increasingly searching.
+
+---
+
 ## GitHub Actions Deployment
 
 `.github/workflows/deploy.yml`:
@@ -1000,8 +1021,11 @@ Produce ALL of the following:
 12. **`.github/workflows/deploy.yml`** — the full Actions workflow above
 13. **`UPDATING.md`** — owner-facing guide: how to add a paper, add a talk, update bio, add a person, etc. Written for a non-technical academic.
 14. **`WEBSITE_PRINCIPLES.md`** — architecture playbook documenting every decision, for future AI-assisted maintenance
+15. **`layouts/robots.txt`** — allows all crawlers, `{{ "sitemap.xml" | absURL }}` Sitemap line, comment pointing to `/llms.txt` (per "AI & Search Visibility")
+16. **`static/llms.txt`** — the short AI-agent welcome file (per "AI & Search Visibility")
+17. **Scholarly-metadata partial** — `citation_*` tags + `ScholarlyArticle` JSON-LD on every publication page (per "AI & Search Visibility")
 
-**The site must build cleanly with `hugo --gc --minify` and deploy correctly to GitHub Pages on first push.**
+**The site must build cleanly with `hugo --gc --minify` and deploy correctly to GitHub Pages on first push. `baseURL` must be the final `https://` URL, and every sitemap entry must inherit it.**
 
 ---
 

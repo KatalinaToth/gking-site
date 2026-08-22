@@ -1,0 +1,20 @@
+{{- /* /publication/index.json — machine-readable catalog of all papers.
+     One JSON array for crawlers, AI agents, and anyone who wants the list
+     without scraping HTML. Nothing on the site links here; it changes no
+     visible page. */ -}}
+{{- $items := slice -}}
+{{- range where site.RegularPages "Section" "publication" -}}
+  {{- $meta := partial "functions/gk_pub_meta" . -}}
+  {{- $item := dict
+        "title" .Title
+        "url" .Permalink -}}
+  {{- with .Date }}{{ $item = merge $item (dict "date" (.Format "2006-01-02")) }}{{ end -}}
+  {{- with .Params.authors }}{{ $item = merge $item (dict "authors" .) }}{{ end -}}
+  {{- with .Params.publication_types }}{{ $item = merge $item (dict "type" (index . 0)) }}{{ end -}}
+  {{- with .Params.publication }}{{ $item = merge $item (dict "venue" (. | markdownify | plainify | htmlUnescape | chomp)) }}{{ end -}}
+  {{- with $meta.doi }}{{ $item = merge $item (dict "doi" .) }}{{ end -}}
+  {{- with $meta.pdf }}{{ $item = merge $item (dict "pdf" .) }}{{ end -}}
+  {{- with .Params.abstract }}{{ $item = merge $item (dict "abstract" (. | markdownify | plainify | htmlUnescape | chomp)) }}{{ end -}}
+  {{- $items = $items | append $item -}}
+{{- end -}}
+{{- $items | jsonify -}}

@@ -107,6 +107,89 @@ def check_required_files(public: Path, errors: list[str]) -> None:
             errors.append(f"missing output file: {rel}")
 
 
+def check_sitemap(public: Path, errors: list[str]) -> None:
+    """Sitemap must exist, parse, stay https-only, and never advertise
+    robots-disallowed /authors/ pages (regressions of the 2026-08 AI
+    visibility fixes)."""
+    import xml.etree.ElementTree as ET
+
+    path = public / "sitemap.xml"
+    if not path.is_file():
+        errors.append("sitemap.xml missing from build output")
+        return
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError as exc:
+        errors.append(f"sitemap.xml is not well-formed XML: {exc}")
+        return
+    ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+    locs = [el.text or "" for el in root.iter(f"{ns}loc")]
+    if len(locs) < 800:
+        errors.append(f"sitemap.xml has {len(locs)} URLs (expected >= 800)")
+    bad_scheme = [u for u in locs if not u.startswith("https://")]
+    if bad_scheme:
+        errors.append(
+            f"sitemap.xml has {len(bad_scheme)} non-https URLs, e.g. {bad_scheme[0]}"
+        )
+    authors = [u for u in locs if "/authors/" in u]
+    if authors:
+        errors.append(
+            f"sitemap.xml advertises {len(authors)} robots-disallowed /authors/ pages"
+        )
+
+
+def check_machine_readable(public: Path, errors: list[str]) -> None:
+    """Crawler/AI-facing surfaces: scholarly metadata on paper pages, the
+    Person block on the homepage, and the corpus map / JSON catalog."""
+    import json
+
+    # Count real paper pages carrying scholarly metadata (redirect stubs for
+    # papers that moved to custom URLs legitimately lack it).
+    tagged = 0
+    pub_dir = public / "publication"
+    if pub_dir.is_dir():
+        for candidate in pub_dir.iterdir():
+            page = candidate / "index.html"
+            if not page.is_file():
+                continue
+            text = page.read_text(encoding="utf-8", errors="replace")
+            if "citation_title" in text and "application/ld+json" in text:
+                tagged += 1
+    if tagged < 200:
+        errors.append(
+            f"only {tagged} publication pages carry citation_*/JSON-LD metadata "
+            "(expected >= 200)"
+        )
+
+    home = public / "index.html"
+    if home.is_file():
+        text = home.read_text(encoding="utf-8", errors="replace")
+        if '"@type":"Person"' not in text:
+            errors.append("homepage lacks the Person JSON-LD block")
+
+    corpus = public / "llms-full.txt"
+    if not corpus.is_file():
+        errors.append("llms-full.txt missing from build output")
+    else:
+        entries = corpus.read_text(encoding="utf-8", errors="replace").count("\n- ")
+        if entries < 300:
+            errors.append(f"llms-full.txt has {entries} entries (expected >= 300)")
+
+    catalog = public / "publication" / "index.json"
+    if not catalog.is_file():
+        errors.append("publication/index.json missing from build output")
+    else:
+        try:
+            items = json.loads(catalog.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            errors.append(f"publication/index.json is not valid JSON: {exc}")
+        else:
+            if not isinstance(items, list) or len(items) < 250:
+                errors.append(
+                    f"publication/index.json has {len(items)} entries (expected >= 250)"
+                )
+
+
 def check_html_snippets(public: Path, errors: list[str]) -> None:
     for rel, needle in HTML_SNIPPETS:
         path = public / rel
@@ -120,6 +203,47 @@ def check_html_snippets(public: Path, errors: list[str]) -> None:
             continue
         if needle not in text:
             errors.append(f"{rel} does not contain expected text: {needle!r}")
+
+
+def check_redirect_targets(public: Path, errors: list[str]) -> None:
+    """Every internal redirect target in redirects.yaml must exist in the
+    built site. On Cloudflare Pages internal redirects are 200 rewrites, so
+    a redirect pointing at a missing page silently serves a 404 — exactly
+    the bug behind ~95 of the Search Console 404s found 2026-08-19."""
+    try:
+        import yaml
+    except ImportError:
+        errors.append("PyYAML unavailable; cannot validate redirect targets")
+        return
+
+    data_file = ROOT / "EditMe" / "Redirects" / "Data" / "redirects.yaml"
+    if not data_file.is_file():
+        return
+    doc = yaml.safe_load(data_file.read_text(encoding="utf-8")) or {}
+    broken = []
+    for entry in doc.get("redirects", []):
+        target = str(entry.get("to", "")).strip()
+        if target.startswith(("http://", "https://")):
+            continue
+        rel = target.split("#")[0].split("?")[0].strip("/")
+        if not rel:
+            continue
+        if not ((public / rel / "index.html").is_file() or (public / rel).is_file()):
+            broken.append(f"/{entry.get('from')} -> {target}")
+    for wc in doc.get("wildcards", []):
+        target = str(wc.get("to", "")).strip()
+        if target.startswith(("http://", "https://")) or ":splat" in target:
+            continue
+        rel = target.strip("/")
+        if rel and not (public / rel / "index.html").is_file():
+            broken.append(f"/{wc.get('from')} -> {target}")
+    if broken:
+        errors.append(
+            f"{len(broken)} redirect target(s) missing from the built site, "
+            f"e.g. {broken[0]}"
+        )
+        for b in broken[:20]:
+            errors.append(f"    broken redirect: {b}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -145,6 +269,9 @@ def main(argv: list[str] | None = None) -> int:
         check_page_counts(public, errors)
         check_required_files(public, errors)
         check_html_snippets(public, errors)
+        check_sitemap(public, errors)
+        check_machine_readable(public, errors)
+        check_redirect_targets(public, errors)
 
     if errors:
         print("[smoke_build] FAILED:", file=sys.stderr)
