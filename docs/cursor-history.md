@@ -160,21 +160,51 @@ gutters; search cap 50; `conerr.pdf` replace-in-place for `/conjointE/`;
 Pagefind body/ignore; Cloudflare dual-project deploy; smoke tests after
 the Startups-mount incident.
 
-Not done in Cursor: rewrite README hosting sentence; full WCAG AA; a11y
-in CI; named student publications on the Gov 2020 page (would strengthen
-recruiting if Gary supplies them).
+Shipped 2026-08-26 (Claude Code): README hosting claims corrected to
+Cloudflare Pages; 19 `files/abs/*-abs.shtml` redirects added for the
+citation links inside `EditMe/Dataverse/Data/dataverse.json`; GaryAI
+endpoint audit written up as `docs/garyai-endpoints.md`; April audit
+broken-link list re-checked and annotated in
+`docs/audits/SITE_AUDIT.md`.
+
+Not done in Cursor: full WCAG AA; a11y in CI; named student
+publications on the Gov 2020 page (would strengthen recruiting if Gary
+supplies them).
+
+## Resolved (were uncertainties; verified 2026-08-26)
+
+- **Both Cloudflare projects stay.** Deliberate: `deploy.yml` lists and
+  deploys to every `gking*` project the API token can see (`gking-7bw`
+  first, then legacy `gking`) and fails only if none succeed. A comment
+  in the workflow records the incident (commit `a3a02fc`) where
+  deploying only to `gking-7bw` failed with a token/project mismatch —
+  the loop is the guard against silently publishing to a dead project.
+- **`apply_rewrites.py` is still invoked** in CI, after Pagefind and
+  before artifact upload. It only serves the GitHub Pages *backup*
+  (inlines target HTML at short URLs, since GH Pages ignores
+  `_redirects`); Cloudflare uses the `_redirects` 200-rewrites instead.
+  Harmless duplication — droppable only if the backup host is abandoned.
+- **GaryAI endpoints confirmed live** (chat POST 200, feedback POST 200,
+  pixel 200 `image/gif`): chat = CloudFront `d325iygsd5krw9` → EC2;
+  feedback = API Gateway `4jk1rwjz4a.execute-api.us-east-2`; pixel =
+  Lambda function URL `ueczzuogsj2hnfdr7gwfwuh5sa0oozkm…on.aws`. Full
+  table with code locations: `docs/garyai-endpoints.md`. Note the pixel
+  URL is hardcoded in the widget JS, not a `data-*` attribute.
+- **April 2026 SITE_AUDIT broken links: all fixed.** Internal 17/17
+  (removed, redirected, or — boocio — the page now exists); external
+  18/20 removed or replaced, 2 replaced with URLs that now return 200;
+  dead-host list cleaned except two personal sites that came back online.
+  The last gap — abs-stub links inside `dataverse.json` — closed with
+  the 2026-08-26 redirect batch. Details annotated in
+  `docs/audits/SITE_AUDIT.md`.
+- **Auto-push hook is enabled on Gary's machine** (`core.hooksPath =
+  .githooks`, verified 2026-08-26) — commit ≈ deploy there. Still
+  per-clone; check before assuming elsewhere.
+- Local `_site/static/_redirects` is **gitignored and often stale**; CI
+  regenerates it. Don't audit redirects from the local copy — read
+  `EditMe/Redirects/Data/redirects.yaml` or run `build_redirects.py`.
 
 ## Uncertainties (verify; don’t guess)
 
-- Whether **both** Cloudflare projects `gking` and `gking-7bw` must stay
-  in the deploy loop, or only `gking-7bw` now that DNS is settled.
-- Whether `apply_rewrites.py` is still needed on Cloudflare or is leftover
-  GitHub Pages inlining (script still runs in CI).
-- Exact GaryAI ancillary endpoints (feedback/pixel) vs the CloudFront chat
-  API — don’t change without checking the live widget `data-*` attrs.
 - README “Claude / Cursor” prompts vs this Claude Code handoff — which
   doc Gary wants as the human source of truth going forward.
-- April 2026 `docs/audits/SITE_AUDIT.md` broken-link list: which items
-  were fixed later.
-- Auto-push hook: enabled on Gary’s machine via `core.hooksPath`; may
-  not be enabled in every clone.

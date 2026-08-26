@@ -14,6 +14,28 @@ sheet. Everything else is either polish or opt-in growth.
 
 ## Part 1 — Broken link audit
 
+> **Re-checked 2026-08-26 — every broken link below is fixed.**
+>
+> - *Internal (1a), 17/17 fixed:* the eiR link, the doubled
+>   `/files/gking/files/` paths, and the malformed relogit path are gone
+>   from source; the `/files/abs/*-abs.shtml` stubs were removed from
+>   content pages **and** rescued with redirects (July 13 batch, plus a
+>   2026-08-26 batch covering 19 more stubs still linked from citation
+>   text in `EditMe/Dataverse/Data/dataverse.json`; two others,
+>   `making-abs` and `pr-abs`, turned out to be real static files that
+>   already serve — no redirect needed); the boocio
+>   publication page now exists so its slug resolves. A wildcard rule
+>   also maps `files/gking/files/*` → `/files/:splat`.
+> - *External 404s (1b), 20/20 fixed:* 15 removed or replaced; the
+>   Kwon, Vargas, and Tamas people-page links were replaced with URLs
+>   that respond (Vargas/Tamas verified 200; `gsg.skku.edu` is
+>   unreachable from a US network — likely geo-restricted, looked fine
+>   when set).
+> - *Dead hosts (1b):* all removed except `meredithdost.com` and
+>   `nicolenova.com`, which are back online (verified 200).
+>
+> The tables below are kept as originally written for the record.
+
 ### 1a. Internal links — 17 real failures
 
 Crawled every HTML page under `public/` and resolved every

@@ -69,7 +69,7 @@ If you changed `url:`/`aliases:`: `python3 _automation/scripts/build_redirects.p
 
 Theme/vendor/`go.mod`/`package.json`; `layouts/` except GaryAI, search modal, mysite, intentional chrome; `.github/workflows/*.yml` without calling it out; GaryAI API hosts in `layouts/baseof.html` (CloudFront → EC2); `/llms.txt` and `/openapi.json`.
 
-GaryAI: widget `_site/static/js/gking-chat-widget.js`; page `/ask-gary/` (`EditMe/Misc/ask-gary/`, `layouts/chatbot/`).
+GaryAI: widget `_site/static/js/gking-chat-widget.js`; page `/ask-gary/` (`EditMe/Misc/ask-gary/`, `layouts/chatbot/`). External hosts (chat = CloudFront→EC2, feedback = API Gateway, pixel = Lambda URL — three different AWS front doors, all verified live 2026-08-26): [`docs/garyai-endpoints.md`](docs/garyai-endpoints.md).
 
 Mysite guide: `EditMe/Misc/mysite/`, `layouts/mysite/`, `_site/static/mysite/`. Product surface, not a one-off.
 
