@@ -1,7 +1,9 @@
 # gking-site
 
 Source for <https://gking.harvard.edu/> — Gary King's academic website,
-built with Hugo + Hugo Blox and deployed to GitHub Pages via GitHub Actions.
+built with Hugo + Hugo Blox and deployed via GitHub Actions to Cloudflare
+Pages (project `gking-7bw`, which `gking.harvard.edu` points at). GitHub
+Pages receives a backup copy only — visitors never hit it.
 
 > **Repository:** <https://github.com/iqss-research/gking-site> ·  
 > **Live site:** <https://gking.harvard.edu/> ·  
@@ -47,7 +49,7 @@ see [`AGENTS.md`](AGENTS.md).
 | Theme | Hugo Blox (`blox-tailwind`) via Go module, vendored in `_vendor/` |
 | CSS | Tailwind (compiled by Blox) + `assets/css/custom.css` for overrides |
 | Search | Pagefind (static, wasm-based; index built in CI) |
-| Hosting | GitHub Pages |
+| Hosting | Cloudflare Pages, project `gking-7bw` (`gking.harvard.edu` → `gking-7bw.pages.dev`); GitHub Pages gets a backup artifact but the domain does not point at it |
 | CI/CD | GitHub Actions (`.github/workflows/deploy.yml`) |
 
 All editable content lives under **`EditMe/`**. Hugo's `module.mounts`
@@ -965,7 +967,7 @@ Two workflows in `.github/workflows/`:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `deploy.yml` | Push to `main` | Build Hugo + Pagefind, run `build_redirects.py` + `apply_rewrites.py` + `compute_publication_first_commit.py`, deploy to GitHub Pages. |
+| `deploy.yml` | Push to `main` | Build Hugo + Pagefind, run `build_redirects.py` + `apply_rewrites.py` + `compute_publication_first_commit.py`, deploy to Cloudflare Pages (`gking-7bw`, then legacy `gking`); a GitHub Pages backup copy is uploaded best-effort. |
 | `weekly-audit.yml` | Weekly (Monday 10am ET) | Runs the site audit script and posts the report as a GitHub Issue (labeled `audit`). The same issue is updated every week so notifications stay manageable. |
 
 ### Weekly site audit
