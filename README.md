@@ -61,9 +61,11 @@ removing folders under `EditMe/`.
 
 **Two ways to edit:**
 
-- **Claude / Cursor** — describe what you want changed in plain English.
-  Claude edits the files and pushes. See [Claude prompts for common
-  tasks](#claude-prompts-for-common-tasks) for ready-made prompts.
+- **Claude Code** — describe what you want changed in plain English.
+  Claude edits the files and pushes, following the agent rules in
+  [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md). See [Claude
+  prompts for common tasks](#claude-prompts-for-common-tasks) for
+  ready-made prompts.
 - **GitHub.com** — pencil-icon edits in the browser. No local tools
   needed. Works from a phone or borrowed laptop.
 
@@ -206,7 +208,7 @@ quick navigation on GitHub.
 <details>
 <summary><h2 id="quick-add-every-content-type">4. Quick add (every content type)</h2></summary>
 
-The easiest way to add content is to paste a prompt into Claude/Cursor.
+The easiest way to add content is to paste a prompt into Claude Code.
 Go to [Claude prompts for common tasks](#claude-prompts-for-common-tasks)
 and copy the prompt for the type of content you want to add.
 
@@ -785,7 +787,7 @@ These are copy-paste prompts. To use one:
 1. Copy the prompt text (everything inside the gray box)
 2. Replace every **`XXX`** with your actual information
 3. If the prompt says "Attach:" — drag that file into the same message
-4. Paste into Claude or Cursor and send
+4. Paste into Claude Code and send
 
 ---
 
@@ -939,7 +941,8 @@ Update the weekly audit script (_automation/scripts/audit_site.py) on gking-site
 
 I want to add a new check: XXX
 
-The script runs every Monday via GitHub Actions and emails a report.
+The script runs every Monday via GitHub Actions and posts the report
+as a GitHub Issue (labeled `audit`).
 It currently checks: research area coverage, legacy map sync, PDF integrity,
 broken redirects, duplicate titles, empty dirs, dependency versions, and
 broken external links. Add the new check and make sure it integrates with

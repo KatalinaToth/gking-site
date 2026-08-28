@@ -206,5 +206,11 @@ supplies them).
 
 ## Uncertainties (verify; don’t guess)
 
-- README “Claude / Cursor” prompts vs this Claude Code handoff — which
-  doc Gary wants as the human source of truth going forward.
+None outstanding as of 2026-08-26. The doc division Gary confirmed:
+**everything lives in git** — `README.md` is the human manual,
+`AGENTS.md`/`CLAUDE.md` are the agent rules, and this file is the
+historical record. README §12's prompts were re-checked the same day
+(Cursor references removed, the audit-script prompt corrected to say
+the report is a GitHub Issue, not an email; the prompt templates
+themselves were still accurate — the topic list matches
+`EditMe/Writings/Articles/` exactly).
