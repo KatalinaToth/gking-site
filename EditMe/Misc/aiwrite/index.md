@@ -18,6 +18,10 @@ Harvard requires a policy (any policy!) for classes, and so here's mine, followe
   h1 + .mt-4.mb-16 { margin-bottom: 0.75rem; }
   .prose p, .prose ol, .prose li { line-height: 1.45; }
   .prose p { margin-top: 0.6rem; margin-bottom: 0.6rem; }
+  /* Run-in labels (The Policy / The Advice): hanging indent so wrapped
+     lines tuck under the text, keeping the label visually distinct. */
+  .prose p:has(> strong:first-child) { padding-left: 1.9rem; text-indent: -1.9rem; margin-top: 1rem; }
+  .prose p:has(> strong:first-child) > strong { letter-spacing: 0.01em; }
   .prose ol { margin-top: 0.6rem; margin-bottom: 0.6rem; }
   .prose li { margin-top: 0.4rem; margin-bottom: 0.4rem; }
 </style>
