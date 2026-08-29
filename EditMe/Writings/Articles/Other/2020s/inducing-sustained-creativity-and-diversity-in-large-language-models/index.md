@@ -20,7 +20,3 @@ links:
     url: "files/Inducing-Sustained-Creativity-LLM-supplement.pdf"
     label: Appendix
 ---
-
-<div class="not-prose" style="overflow-x:auto;width:100%;margin:1rem 0 0;">
-<img src="{{< staticrel "files/inducing-sustained-creativity/RD-1.5x.gif" >}}" width="1500" height="300" alt="Animation: ordinary decoding versus recoding decoding (RD)" style="max-width:100%;width:100%;height:auto;display:block;min-height:120px;" loading="lazy" />
-</div>
