@@ -4,7 +4,7 @@ title: Should You Use AI to Write for You?
 
 Harvard requires a policy (any policy!) for classes, and so here's mine, followed by advice for students and others.
 
-**The Policy**: Your goal is to produce the best work you are capable of. If AI helps you do that, great.
+**The Policy**: Your goal is to produce the best work you are capable of. If AI helps you do that, then of course you should use it.
 
 **The Advice**: Put the effort in.
 
