@@ -180,8 +180,9 @@ To use one: copy the prompt text, replace every **`XXX`** with your actual
 information, drag in the file if the prompt says "Attach:", then paste into
 Claude Code and send.
 
+<blockquote>
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new journal article</strong> (attach the article PDF)</summary>
+<summary><strong>Add a new journal article</strong> (attach the article PDF)</summary>
 
 ```
 Add a new journal article to gking-site.
@@ -201,7 +202,7 @@ The article PDF is attached. Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new book</strong></summary>
+<summary><strong>Add a new book</strong></summary>
 
 ```
 Add a new book to gking-site.
@@ -219,7 +220,7 @@ Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new presentation</strong> (attach the slides PDF)</summary>
+<summary><strong>Add a new presentation</strong> (attach the slides PDF)</summary>
 
 ```
 Add a new presentation to gking-site.
@@ -235,7 +236,7 @@ The slides PDF is attached. Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new court brief</strong> (attach the brief PDF)</summary>
+<summary><strong>Add a new court brief</strong> (attach the brief PDF)</summary>
 
 ```
 Add a new court brief to gking-site.
@@ -251,7 +252,7 @@ The brief PDF is attached. Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new patent</strong> (attach the patent PDF)</summary>
+<summary><strong>Add a new patent</strong> (attach the patent PDF)</summary>
 
 ```
 Add a new patent to gking-site.
@@ -267,7 +268,7 @@ The patent PDF is attached. Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a new software package page</strong></summary>
+<summary><strong>Add a new software package page</strong></summary>
 
 ```
 Add a new software package page to gking-site.
@@ -284,7 +285,7 @@ Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Replace or update a PDF</strong> (attach the new PDF)</summary>
+<summary><strong>Replace or update a PDF</strong> (attach the new PDF)</summary>
 
 ```
 Replace the PDF for an existing item on gking-site.
@@ -298,7 +299,7 @@ Find the item, replace the PDF keeping the same filename. Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a short URL (redirect)</strong></summary>
+<summary><strong>Add a short URL (redirect)</strong></summary>
 
 ```
 Add a new short URL redirect to gking-site.
@@ -312,7 +313,7 @@ Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Add a paper to a Research Area</strong></summary>
+<summary><strong>Add a paper to a Research Area</strong></summary>
 
 ```
 Add a paper to a Research Area on gking-site.
@@ -327,7 +328,7 @@ Commit and push.
 </details>
 
 <details name="gk-prompt">
-<summary>&emsp;<strong>Other tasks</strong> (bio/CV, blog posts, weekly audit script)</summary>
+<summary><strong>Other tasks</strong> (bio/CV, blog posts, weekly audit script)</summary>
 
 ```
 Update the Bio/CV page on gking-site.
@@ -357,6 +358,7 @@ Commit and push.
 ```
 
 </details>
+</blockquote>
 
 **Tips:** to find an existing item, ask Claude to search by title; to preview
 before publishing, ask Claude to run `hugo server`; combine several prompts
@@ -367,8 +369,9 @@ in one message for multiple changes at once.
 Step-by-step instructions for adding content directly on GitHub (no Claude,
 no local tools).
 
+<blockquote>
 <details name="gk-manual">
-<summary>&emsp;<strong>Adding a paper or article</strong></summary>
+<summary><strong>Adding a paper or article</strong></summary>
 
 1. Go to https://github.com/iqss-research/gking-site
 2. Click into `_site/static/files/`
@@ -422,7 +425,7 @@ Use `"tab": "book"` for books, `"tab": "patent"` for patents, `"tab": "courtbrie
 </details>
 
 <details name="gk-manual">
-<summary>&emsp;<strong>Adding a talk / presentation</strong></summary>
+<summary><strong>Adding a talk / presentation</strong></summary>
 
 1. Upload the slides PDF to `_site/static/files/` (same as steps 2–5 for a paper)
 2. Navigate to `EditMe/Writings/Presentations/`
@@ -455,7 +458,7 @@ the first one (e.g., `your-talk-title/second-venue-year/index.md`).
 </details>
 
 <details name="gk-manual">
-<summary>&emsp;<strong>Adding a software page</strong></summary>
+<summary><strong>Adding a software page</strong></summary>
 
 1. Navigate to `EditMe/Software/`
 2. Click **"Add file"** → **"Create new file"**
@@ -492,7 +495,7 @@ links:
 </details>
 
 <details name="gk-manual">
-<summary>&emsp;<strong>Adding a featured image</strong></summary>
+<summary><strong>Adding a featured image</strong></summary>
 
 To add a thumbnail image to any paper, talk, or software page:
 
@@ -504,7 +507,7 @@ To add a thumbnail image to any paper, talk, or software page:
 </details>
 
 <details name="gk-manual">
-<summary>&emsp;<strong>Link types reference</strong> (the <code>links:</code> section)</summary>
+<summary><strong>Link types reference</strong> (the <code>links:</code> section)</summary>
 
 | What you type | What button appears on the page |
 |---|---|
@@ -518,6 +521,7 @@ it points to a PDF you uploaded to `_site/static/files/`. Otherwise, use a
 full URL starting with `https://`.
 
 </details>
+</blockquote>
 
 <h3 id="publication-types-reference">Publication types reference</h3>
 
@@ -590,8 +594,9 @@ alone (GaryAI citations and old links depend on them).
 <details name="gk-section">
 <summary id="site-features"><strong>Site features</strong></summary>
 
+<blockquote>
 <details name="gk-feature">
-<summary id="featured-spotlight--see-also">&emsp;<strong>Featured spotlight &amp; See Also</strong></summary>
+<summary id="featured-spotlight--see-also"><strong>Featured spotlight &amp; See Also</strong></summary>
 
 **Working Papers spotlight.** The section at the top of `/publication/` is
 controlled by `EditMe/Writings/Data/featured_publications.yaml`:
@@ -651,7 +656,7 @@ dataverse_name: "Replication Data for: Paper Title"
 </details>
 
 <details name="gk-feature">
-<summary id="research-areas-homepage-navigation--other-pages">&emsp;<strong>Research areas, homepage &amp; navigation</strong></summary>
+<summary id="research-areas-homepage-navigation--other-pages"><strong>Research areas, homepage &amp; navigation</strong></summary>
 
 **Research areas.** Groupings live in
 `EditMe/ResearchAreas/Data/research_areas.json` with two top-level keys
@@ -713,7 +718,7 @@ The "Advice and Suggestions" links live at the bottom of
 </details>
 
 <details name="gk-feature">
-<summary id="people--research-group">&emsp;<strong>People &amp; research group</strong></summary>
+<summary id="people--research-group"><strong>People &amp; research group</strong></summary>
 
 **Profiles.** Each person has a folder at
 `EditMe/People/Profiles/<slug>/index.md`:
@@ -753,7 +758,7 @@ curated by hand in `EditMe/UI/PerSectionLayouts/ResearchGroup/single.html`.
 </details>
 
 <details name="gk-feature">
-<summary id="startups-section">&emsp;<strong>Startups</strong></summary>
+<summary id="startups-section"><strong>Startups</strong></summary>
 
 The Startups section at `/startups/` showcases Gary's startup companies,
 with its own menu item and dedicated layout.
@@ -813,7 +818,7 @@ changed.
 </details>
 
 <details name="gk-feature">
-<summary id="garyai-chatbot">&emsp;<strong>GaryAI chatbot</strong></summary>
+<summary id="garyai-chatbot"><strong>GaryAI chatbot</strong></summary>
 
 The site has an AI chatbot ("GaryAI") with two surfaces:
 
@@ -835,6 +840,7 @@ the popup button is hidden via JS; on mobile, the native chat is hidden and
 the popup widget opens full-screen instead.
 
 </details>
+</blockquote>
 
 </details>
 
