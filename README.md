@@ -12,8 +12,8 @@ GitHub Pages receives a backup copy only) and goes live in ~3 minutes.
 **This file is the single reference for human maintainers.** For AI-agent
 workflow rules see [`AGENTS.md`](AGENTS.md). Click any section below to expand.
 
-<details>
-<summary><h2 id="overview">Overview</h2></summary>
+<details name="gk-section">
+<summary id="overview"><strong>Overview</strong></summary>
 
 | Layer | Choice |
 |-------|--------|
@@ -43,8 +43,8 @@ folders under `EditMe/`.
 
 </details>
 
-<details>
-<summary><h2 id="repository-layout">Repository layout</h2></summary>
+<details name="gk-section">
+<summary id="repository-layout"><strong>Repository layout</strong></summary>
 
 ```
 gking-site/                           ← root of the git checkout
@@ -157,8 +157,8 @@ under `EditMe/` has its own small `README.md` for quick navigation.
 
 </details>
 
-<details>
-<summary><h2 id="quick-add-every-content-type">Adding content</h2></summary>
+<details name="gk-section">
+<summary id="quick-add-every-content-type"><strong>Adding content</strong></summary>
 
 Have this ready for each content type:
 
@@ -180,8 +180,8 @@ To use one: copy the prompt text, replace every **`XXX`** with your actual
 information, drag in the file if the prompt says "Attach:", then paste into
 Claude Code and send.
 
-<details>
-<summary><strong>Add a new journal article</strong> (attach the article PDF)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new journal article</strong> (attach the article PDF)</summary>
 
 ```
 Add a new journal article to gking-site.
@@ -200,8 +200,8 @@ The article PDF is attached. Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a new book</strong></summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new book</strong></summary>
 
 ```
 Add a new book to gking-site.
@@ -218,8 +218,8 @@ Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a new presentation</strong> (attach the slides PDF)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new presentation</strong> (attach the slides PDF)</summary>
 
 ```
 Add a new presentation to gking-site.
@@ -234,8 +234,8 @@ The slides PDF is attached. Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a new court brief</strong> (attach the brief PDF)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new court brief</strong> (attach the brief PDF)</summary>
 
 ```
 Add a new court brief to gking-site.
@@ -250,8 +250,8 @@ The brief PDF is attached. Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a new patent</strong> (attach the patent PDF)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new patent</strong> (attach the patent PDF)</summary>
 
 ```
 Add a new patent to gking-site.
@@ -266,8 +266,8 @@ The patent PDF is attached. Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a new software package page</strong></summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a new software package page</strong></summary>
 
 ```
 Add a new software package page to gking-site.
@@ -283,8 +283,8 @@ Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Replace or update a PDF</strong> (attach the new PDF)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Replace or update a PDF</strong> (attach the new PDF)</summary>
 
 ```
 Replace the PDF for an existing item on gking-site.
@@ -297,8 +297,8 @@ Find the item, replace the PDF keeping the same filename. Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a short URL (redirect)</strong></summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a short URL (redirect)</strong></summary>
 
 ```
 Add a new short URL redirect to gking-site.
@@ -311,8 +311,8 @@ Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Add a paper to a Research Area</strong></summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Add a paper to a Research Area</strong></summary>
 
 ```
 Add a paper to a Research Area on gking-site.
@@ -326,8 +326,8 @@ Commit and push.
 
 </details>
 
-<details>
-<summary><strong>Other tasks</strong> (bio/CV, blog posts, weekly audit script)</summary>
+<details name="gk-prompt">
+<summary>&emsp;<strong>Other tasks</strong> (bio/CV, blog posts, weekly audit script)</summary>
 
 ```
 Update the Bio/CV page on gking-site.
@@ -367,8 +367,8 @@ in one message for multiple changes at once.
 Step-by-step instructions for adding content directly on GitHub (no Claude,
 no local tools).
 
-<details>
-<summary><strong>Adding a paper or article</strong></summary>
+<details name="gk-manual">
+<summary>&emsp;<strong>Adding a paper or article</strong></summary>
 
 1. Go to https://github.com/iqss-research/gking-site
 2. Click into `_site/static/files/`
@@ -421,8 +421,8 @@ Use `"tab": "book"` for books, `"tab": "patent"` for patents, `"tab": "courtbrie
 
 </details>
 
-<details>
-<summary><strong>Adding a talk / presentation</strong></summary>
+<details name="gk-manual">
+<summary>&emsp;<strong>Adding a talk / presentation</strong></summary>
 
 1. Upload the slides PDF to `_site/static/files/` (same as steps 2–5 for a paper)
 2. Navigate to `EditMe/Writings/Presentations/`
@@ -454,8 +454,8 @@ the first one (e.g., `your-talk-title/second-venue-year/index.md`).
 
 </details>
 
-<details>
-<summary><strong>Adding a software page</strong></summary>
+<details name="gk-manual">
+<summary>&emsp;<strong>Adding a software page</strong></summary>
 
 1. Navigate to `EditMe/Software/`
 2. Click **"Add file"** → **"Create new file"**
@@ -491,8 +491,8 @@ links:
 
 </details>
 
-<details>
-<summary><strong>Adding a featured image</strong></summary>
+<details name="gk-manual">
+<summary>&emsp;<strong>Adding a featured image</strong></summary>
 
 To add a thumbnail image to any paper, talk, or software page:
 
@@ -503,8 +503,8 @@ To add a thumbnail image to any paper, talk, or software page:
 
 </details>
 
-<details>
-<summary><strong>Link types reference</strong> (the <code>links:</code> section)</summary>
+<details name="gk-manual">
+<summary>&emsp;<strong>Link types reference</strong> (the <code>links:</code> section)</summary>
 
 | What you type | What button appears on the page |
 |---|---|
@@ -552,8 +552,8 @@ over front-matter `publication_types` for tab routing.
 
 </details>
 
-<details>
-<summary><h2 id="short-urls--redirects">Short URLs &amp; redirects</h2></summary>
+<details name="gk-section">
+<summary id="short-urls--redirects"><strong>Short URLs &amp; redirects</strong></summary>
 
 To create a short URL like `gking.harvard.edu/quest` that sends visitors to
 a page or external link:
@@ -587,11 +587,11 @@ alone (GaryAI citations and old links depend on them).
 
 </details>
 
-<details>
-<summary><h2 id="site-features">Site features</h2></summary>
+<details name="gk-section">
+<summary id="site-features"><strong>Site features</strong></summary>
 
-<details>
-<summary><h3 id="featured-spotlight--see-also">Featured spotlight &amp; See Also</h3></summary>
+<details name="gk-feature">
+<summary id="featured-spotlight--see-also">&emsp;<strong>Featured spotlight &amp; See Also</strong></summary>
 
 **Working Papers spotlight.** The section at the top of `/publication/` is
 controlled by `EditMe/Writings/Data/featured_publications.yaml`:
@@ -650,8 +650,8 @@ dataverse_name: "Replication Data for: Paper Title"
 
 </details>
 
-<details>
-<summary><h3 id="research-areas-homepage-navigation--other-pages">Research areas, homepage &amp; navigation</h3></summary>
+<details name="gk-feature">
+<summary id="research-areas-homepage-navigation--other-pages">&emsp;<strong>Research areas, homepage &amp; navigation</strong></summary>
 
 **Research areas.** Groupings live in
 `EditMe/ResearchAreas/Data/research_areas.json` with two top-level keys
@@ -712,8 +712,8 @@ The "Advice and Suggestions" links live at the bottom of
 
 </details>
 
-<details>
-<summary><h3 id="people--research-group">People &amp; research group</h3></summary>
+<details name="gk-feature">
+<summary id="people--research-group">&emsp;<strong>People &amp; research group</strong></summary>
 
 **Profiles.** Each person has a folder at
 `EditMe/People/Profiles/<slug>/index.md`:
@@ -752,8 +752,8 @@ curated by hand in `EditMe/UI/PerSectionLayouts/ResearchGroup/single.html`.
 
 </details>
 
-<details>
-<summary><h3 id="startups-section">Startups</h3></summary>
+<details name="gk-feature">
+<summary id="startups-section">&emsp;<strong>Startups</strong></summary>
 
 The Startups section at `/startups/` showcases Gary's startup companies,
 with its own menu item and dedicated layout.
@@ -812,8 +812,8 @@ changed.
 
 </details>
 
-<details>
-<summary><h3 id="garyai-chatbot">GaryAI chatbot</h3></summary>
+<details name="gk-feature">
+<summary id="garyai-chatbot">&emsp;<strong>GaryAI chatbot</strong></summary>
 
 The site has an AI chatbot ("GaryAI") with two surfaces:
 
@@ -838,8 +838,8 @@ the popup widget opens full-screen instead.
 
 </details>
 
-<details>
-<summary><h2 id="automation--cicd">Automation &amp; CI/CD</h2></summary>
+<details name="gk-section">
+<summary id="automation--cicd"><strong>Automation &amp; CI/CD</strong></summary>
 
 Two workflows in `.github/workflows/`:
 
@@ -887,8 +887,8 @@ most need `pip install -r _automation/scripts/requirements.txt`.
 
 </details>
 
-<details>
-<summary><h2 id="local-development">Local development</h2></summary>
+<details name="gk-section">
+<summary id="local-development"><strong>Local development</strong></summary>
 
 ### First-time setup (do this once)
 
@@ -961,8 +961,8 @@ git log --follow -- EditMe/Writings/Articles/CausalInference/2020s/your-paper/in
 
 </details>
 
-<details>
-<summary><h2 id="architecture--principles">Architecture &amp; principles</h2></summary>
+<details name="gk-section">
+<summary id="architecture--principles"><strong>Architecture &amp; principles</strong></summary>
 
 Key architectural rules distilled from building this site:
 
@@ -995,8 +995,8 @@ Key architectural rules distilled from building this site:
 
 </details>
 
-<details>
-<summary><h2 id="troubleshooting">Troubleshooting</h2></summary>
+<details name="gk-section">
+<summary id="troubleshooting"><strong>Troubleshooting</strong></summary>
 
 **"I committed and nothing changed on the site."**
 Give it 3–4 minutes, then check
@@ -1025,8 +1025,8 @@ From terminal: `git revert <sha>`. Or on github.com: click the commit →
 
 </details>
 
-<details>
-<summary><h2 id="audit-reports">Audit reports</h2></summary>
+<details name="gk-section">
+<summary id="audit-reports"><strong>Audit reports</strong></summary>
 
 Point-in-time audit reports, kept in `docs/audits/` for historical reference:
 
