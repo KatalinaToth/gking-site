@@ -1991,6 +1991,10 @@
     "advancing-science-by-designing-for-surprise": {
       "tab": "journal",
       "drupal": "journal_article"
+    },
+    "improving-computational-reproducibility-in-the-social-sciences": {
+      "tab": "journal",
+      "drupal": "journal_article"
     }
   }
 }
