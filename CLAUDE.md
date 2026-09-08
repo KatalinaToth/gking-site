@@ -52,7 +52,7 @@ Writings live under `EditMe/Writings/` (articles by topic/decade/slug; talks und
 
 ## Preview and publish
 
-Hugo 0.160.1, same visibility as CI:
+Hugo 0.160.1, same visibility as CI. If `.tools/hugo-0.160.1/hugo` is missing, run `bash _automation/scripts/ensure_hugo.sh` (installs it, gitignored). Tailwind needs Node ≥ 22 on `PATH`.
 
 ```bash
 .tools/hugo-0.160.1/hugo --buildFuture          # or: hugo --buildFuture
